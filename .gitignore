@@ -1,0 +1,14 @@
+.claude
+.venv
+.env
+.idea
+go-model/
+go-webapi/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
