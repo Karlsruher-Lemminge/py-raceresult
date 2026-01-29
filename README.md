@@ -14,14 +14,24 @@ You can receive an Raceresult API Key in your Account.
 
 ## Installation
 
+From GitHub:
+
 ```bash
-pip install raceresult
+pip install git+https://github.com/Karlsruher-Lemminge/py-raceresult.git
 ```
 
 Or with uv:
 
 ```bash
-uv add raceresult
+uv add git+https://github.com/Karlsruher-Lemminge/py-raceresult.git
+```
+
+For local development:
+
+```bash
+git clone https://github.com/Karlsruher-Lemminge/py-raceresult.git
+cd py-raceresult
+pip install -e .
 ```
 
 ## Quick Start
