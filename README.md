@@ -1,6 +1,6 @@
 # py-raceresult
 
-Async Python client for the [Raceresult](https://www.raceresult.com/) event management API.
+Async Python client for the [Raceresult](https://www.raceresult.com/) event management API. This is unofficial Python implementation of [Raceresult go-webapi](https://github.com/raceresult/go-webapi).
 
 ## Features
 
