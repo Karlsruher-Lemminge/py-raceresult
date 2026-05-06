@@ -46,22 +46,24 @@ class ListOrder(BaseModel):
     """Order/Grouping of a list.
 
     Based on go-model/list/list.go:91-107.
+    JSON uses Go struct field names (no json: tags in Go → PascalCase).
+    Note: xml: tags in Go source are shorter ("Exp", "D") but irrelevant for JSON.
     """
 
-    expression: str = Field(default="", alias="Exp")
-    descending: bool = Field(default=False, alias="D")
+    expression: str = Field(default="", alias="Expression")
+    descending: bool = Field(default=False, alias="Descending")
     grouping: int = Field(default=0, alias="Grouping")
     group_filter_default: int = Field(default=0, alias="GroupFilterDefault")
     group_filter_label: str = Field(default="", alias="GroupFilterLabel")
-    page_break: PageBreak = Field(default=PageBreak.NO_PAGE_BREAK, alias="P")
-    font_name: str = Field(default="", alias="F")
-    font_size: int = Field(default=0, alias="S")
-    font_bold: bool = Field(default=False, alias="B")
-    font_italic: bool = Field(default=False, alias="I")
-    font_underlined: bool = Field(default=False, alias="U")
-    color: str = Field(default="", alias="C")
-    background_color: str = Field(default="", alias="BC")
-    spacing: int = Field(default=0, alias="SP")
+    page_break: PageBreak = Field(default=PageBreak.NO_PAGE_BREAK, alias="PageBreak")
+    font_name: str = Field(default="", alias="FontName")
+    font_size: int = Field(default=0, alias="FontSize")
+    font_bold: bool = Field(default=False, alias="FontBold")
+    font_italic: bool = Field(default=False, alias="FontItalic")
+    font_underlined: bool = Field(default=False, alias="FontUnderlined")
+    color: str = Field(default="", alias="Color")
+    background_color: str = Field(default="", alias="BackgroundColor")
+    spacing: int = Field(default=0, alias="Spacing")
 
     model_config = {"populate_by_name": True}
 
@@ -70,12 +72,13 @@ class ListFilter(BaseModel):
     """Filter of a list.
 
     Based on go-model/list/list.go:110-115.
+    JSON uses Go struct field names (no json: tags in Go → PascalCase).
     """
 
-    or_conjunction: bool = Field(default=False, alias="Or")
-    expression1: str = Field(default="", alias="Exp1")
-    operator: str = Field(default="", alias="Op")
-    expression2: str = Field(default="", alias="Exp2")
+    or_conjunction: bool = Field(default=False, alias="OrConjunction")
+    expression1: str = Field(default="", alias="Expression1")
+    operator: str = Field(default="", alias="Operator")
+    expression2: str = Field(default="", alias="Expression2")
 
     model_config = {"populate_by_name": True}
 
@@ -84,24 +87,25 @@ class ListField(BaseModel):
     """Field of a list.
 
     Based on go-model/list/list.go:118-135.
+    JSON uses Go struct field names (no json: tags in Go → PascalCase).
     """
 
-    expression: str = Field(default="", alias="Exp")
-    label: str = Field(default="", alias="La")
-    label2: str = Field(default="", alias="La2")
-    alignment: int = Field(default=0, alias="A")
-    font_bold: bool = Field(default=False, alias="B")
-    font_italic: bool = Field(default=False, alias="I")
-    font_underlined: bool = Field(default=False, alias="U")
-    line: int = Field(default=0, alias="Li")
-    color: str = Field(default="", alias="C")
+    expression: str = Field(default="", alias="Expression")
+    label: str = Field(default="", alias="Label")
+    label2: str = Field(default="", alias="Label2")
+    alignment: int = Field(default=0, alias="Alignment")
+    font_bold: bool = Field(default=False, alias="FontBold")
+    font_italic: bool = Field(default=False, alias="FontItalic")
+    font_underlined: bool = Field(default=False, alias="FontUnderlined")
+    line: int = Field(default=0, alias="Line")
+    color: str = Field(default="", alias="Color")
     link: str = Field(default="", alias="Link")
     col_span: int = Field(default=0, alias="ColSpan")
-    col_offset: int = Field(default=0, alias="CO")
-    position: RRDecimal = Field(default=Decimal(0), alias="P")
-    dynamic_format: str = Field(default="", alias="DF")
-    preview_only: bool = Field(default=False, alias="PO")
-    responsive_hide: int = Field(default=0, alias="RH")
+    col_offset: int = Field(default=0, alias="ColOffset")
+    position: RRDecimal = Field(default=Decimal(0), alias="Position")
+    dynamic_format: str = Field(default="", alias="DynamicFormat")
+    preview_only: bool = Field(default=False, alias="PreviewOnly")
+    responsive_hide: int = Field(default=0, alias="ResponsiveHide")
 
     model_config = {"populate_by_name": True}
 
