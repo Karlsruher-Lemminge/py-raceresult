@@ -7,9 +7,9 @@ You can receive an Raceresult API Key in your Account.
 ## Features
 
 - **Async-first design** using httpx for non-blocking I/O
-- **Full API coverage** with 22 endpoint modules and 100+ methods
+- **Full API coverage** with 44 endpoint modules matching go-webapi
 - **Type-safe** with Pydantic v2 models and full type annotations
-- **Multiple auth methods** including API key, username/password, and 2FA
+- **Multiple auth methods** including API key, username/password, 2FA, and RR user token
 - **Custom type handling** for Raceresult date/time/decimal formats
 
 ## Installation
@@ -86,18 +86,31 @@ await api.logout()
 
 ## Available Endpoints
 
-Once logged in, access event-specific endpoints via `api.event(event_id)`:
+Non-event endpoints are accessed directly on the API object:
+
+| Endpoint | Description |
+|----------|-------------|
+| `api.general()` | Server fonts, version, translations |
+| `await api.event_list()` | List all events |
+| `await api.create_event()` | Create a new event |
+| `await api.user_info()` | Current user info |
+
+Event-specific endpoints are accessed via `api.event(event_id)`:
 
 | Category | Endpoints | Description |
 |----------|-----------|-------------|
 | **Core Data** | `data`, `participants`, `settings` | Query, filter, and manage participant data |
-| **Event Config** | `contests`, `agegroups`, `bibranges`, `customfields`, `entryfees` | Event structure and pricing |
-| **Timing** | `times`, `rawdata`, `timingpoints`, `timingpointrules`, `chipfile` | Timing device data and configuration |
-| **Results** | `results`, `lists`, `exporters` | Result definitions and output generation |
+| **Event Config** | `contests`, `agegroups`, `bibranges`, `customfields`, `entryfees`, `user_defined_fields` | Event structure and pricing |
+| **Timing** | `times`, `rawdata`, `rawdata_rules`, `timingpoints`, `timingpointrules`, `chipfile`, `group_times`, `overwrite_values`, `splits` | Timing device data and configuration |
+| **Results** | `results`, `lists`, `exporters`, `rankings`, `team_scores` | Result definitions and output generation |
+| **Output** | `certificates`, `certificate_sets`, `labels`, `statistics` | Printable output generation |
 | **Registration** | `registrations`, `vouchers` | Registration forms and discount codes |
-| **Communication** | `email_templates` | Email and SMS templates |
+| **Communication** | `email_templates`, `chat`, `webhooks`, `simple_api` | Messaging and integrations |
 | **Check-In** | `kiosks` | Check-in kiosk configuration |
 | **Audit** | `history` | Change tracking |
+| **Media** | `pictures` | Picture library |
+| **Archives** | `archives` | Cross-event participant history |
+| **Infrastructure** | `file`, `backup`, `forwarding`, `synchronization`, `dependencies`, `information` | File management, replication, utilities |
 
 ## Usage Examples
 
@@ -179,20 +192,27 @@ csv_bytes = await event.lists.create_csv(
 
 ## Models
 
-All API responses are validated using Pydantic models. Key models include:
+All API responses are validated using Pydantic v2 models. Key models:
 
-- `Participant` - Participant data with all standard fields
-- `Contest`, `AgeGroup`, `BibRange` - Event configuration
-- `TimingPoint`, `TimingPointRule`, `RawData` - Timing system
-- `Registration`, `Step`, `Element`, `FormField` - Registration forms
-- `Voucher`, `EntryFee` - Payment and pricing
-- `EmailTemplate` - Communication templates
-- `Kiosk`, `KioskStep`, `KioskDisplayField`, `KioskEditField` - Check-in kiosk
-
-Import models from `raceresult.models`:
+| Module | Models |
+|--------|--------|
+| `raceresult.models.event` | `Contest`, `AgeGroup`, `BibRange`, `EntryFee`, `Ranking`, `Split`, `TeamScore`, `WebHook`, `ChatMessage`, `GroupTimes`, `RawDataRule`, `SimpleAPIItem`, `Version`, `ForwardingInfo` |
+| `raceresult.models.participant` | `Participant`, `ParticipantNewResponse` |
+| `raceresult.models.timing` | `TimingPoint`, `TimingPointRule`, `RawData`, `Time`, `Passing` |
+| `raceresult.models.registration` | `Registration`, `Step`, `Element`, `FormField` |
+| `raceresult.models.payment` | `Voucher`, `VoucherType` |
+| `raceresult.models.email` | `EmailTemplate` |
+| `raceresult.models.kiosk` | `Kiosk`, `KioskStep`, `KioskDisplayField`, `KioskEditField` |
+| `raceresult.models.certificate` | `Certificate`, `CertificateElement`, `CertificateZone` |
+| `raceresult.models.certificate_set` | `CertificateSet`, `CertificateSetType` |
+| `raceresult.models.label` | `Label`, `LabelDirection`, `LabelBarcodeType` |
+| `raceresult.models.statistic` | `Statistics`, `Aggregation` |
+| `raceresult.models.archives` | `ArchivesParticipant`, `ParticipationExt`, `ArchivesMatch` |
 
 ```python
 from raceresult.models import Participant, Contest, AgeGroup
+from raceresult.models.certificate import Certificate
+from raceresult.models.statistic import Statistics, Aggregation
 ```
 
 ## Requirements

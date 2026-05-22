@@ -6,13 +6,22 @@ from decimal import Decimal
 import pytest
 
 from raceresult.models.types import RRDate, RRDateTime, RRDecimal
-from raceresult.models.event import Contest, AgeGroup, CustomField, CustomFieldType
+from raceresult.models.event import (
+    Contest, AgeGroup, CustomField, CustomFieldType,
+    ChatMessage, ForwardingInfo, GroupTimes, GroupTime,
+    RawDataRule, SimpleAPIItem, TeamScore, WebHook, WebHookType, Version,
+)
 from raceresult.models.participant import Participant
 from raceresult.models.registration import Registration, Step, Element, FormField
 from raceresult.models.payment import Voucher, VoucherType
 from raceresult.models.email import EmailTemplate, TemplateType
 from raceresult.models.timing import ChipFileEntry, TimingPoint
 from raceresult.models.kiosk import Kiosk, KioskAfterSave, KioskStep, KioskDisplayField, KioskEditField, KioskSearchField
+from raceresult.models.archives import ArchivesMatch, ArchivesParticipant, ParticipationExt
+from raceresult.models.certificate import Certificate, CertificateElement, CertificateZone, ElementType
+from raceresult.models.certificate_set import CertificateSet, CertificateSetType
+from raceresult.models.statistic import Statistics, Aggregation
+from raceresult.models.label import Label, LabelDirection, LabelBarcodeType
 
 
 class TestRRDate:
@@ -351,3 +360,288 @@ class TestKiosk:
         assert kiosk.after_save is not None
         assert kiosk.after_save[0].type == "SaveValue"
         assert kiosk.after_save[0].destination == "CheckIn"
+
+
+class TestChatMessage:
+    """Tests for ChatMessage — uses single-character JSON aliases."""
+
+    def test_parse_from_api(self):
+        data = {"i": 7, "u": "alice", "d": "2024-06-01 10:00", "m": "Hello!"}
+        msg = ChatMessage.model_validate(data)
+        assert msg.id == 7
+        assert msg.username == "alice"
+        assert msg.date == "2024-06-01 10:00"
+        assert msg.message == "Hello!"
+
+    def test_roundtrip(self):
+        msg = ChatMessage(id=1, username="bob", date="now", message="hi")
+        data = msg.model_dump(by_alias=True)
+        assert data["i"] == 1
+        assert data["u"] == "bob"
+        assert data["d"] == "now"
+        assert data["m"] == "hi"
+        assert ChatMessage.model_validate(data).message == "hi"
+
+
+class TestVersion:
+    """Tests for Version — uses lowercase JSON aliases."""
+
+    def test_parse_from_api(self):
+        data = {"major": 12, "minor": 3, "revision": 45, "tag": "release", "hash": "abc123"}
+        v = Version.model_validate(data)
+        assert v.major == 12
+        assert v.minor == 3
+        assert v.revision == 45
+        assert v.tag == "release"
+
+    def test_roundtrip(self):
+        v = Version(major=1, minor=2, revision=3, tag="", hash="")
+        data = v.model_dump(by_alias=True)
+        assert data["major"] == 1
+        assert data["minor"] == 2
+        assert "revision" in data
+
+
+class TestForwardingInfo:
+    def test_parse(self):
+        data = {"BytesSent": 1024, "BytesReceived": 512}
+        info = ForwardingInfo.model_validate(data)
+        assert info.bytes_sent == 1024
+        assert info.bytes_received == 512
+
+    def test_roundtrip(self):
+        info = ForwardingInfo(bytes_sent=100, bytes_received=200)
+        data = info.model_dump(by_alias=True)
+        assert data["BytesSent"] == 100
+        assert ForwardingInfo.model_validate(data).bytes_received == 200
+
+
+class TestGroupTimes:
+    def test_parse(self):
+        data = {
+            "Mode": "wave",
+            "WaveField": "WaveNo",
+            "Items": [
+                {"ID": 1, "Time": "3600", "Count": 50},
+                {"ID": "A", "Time": "0", "Item": "special", "Count": 10},
+            ],
+        }
+        gt = GroupTimes.model_validate(data)
+        assert gt.mode == "wave"
+        assert len(gt.items) == 2
+        assert gt.items[0].count == 50
+        assert gt.items[1].id == "A"
+        assert gt.items[1].item == "special"
+
+    def test_roundtrip(self):
+        gt = GroupTimes(mode="wave", wave_field="WaveNo", items=[GroupTime(id=1, count=5)])
+        data = gt.model_dump(by_alias=True)
+        assert data["Mode"] == "wave"
+        assert data["Items"][0]["ID"] == 1
+
+
+class TestRawDataRule:
+    def test_parse(self):
+        data = {"ID": 3, "ResultID": 1, "ContestID": 2, "Mode": 0, "N": 1,
+                "Min": 0, "MinOffset": "0", "Max": 0, "MaxOffset": "0",
+                "Ref": 0, "RefOffset": "0"}
+        rule = RawDataRule.model_validate(data)
+        assert rule.id == 3
+        assert rule.result_id == 1
+        assert rule.contest_id == 2
+
+    def test_roundtrip(self):
+        rule = RawDataRule(id=1, result_id=2, contest_id=3)
+        data = rule.model_dump(by_alias=True)
+        assert data["ID"] == 1
+        assert data["ResultID"] == 2
+        assert RawDataRule.model_validate(data).contest_id == 3
+
+
+class TestSimpleAPIItem:
+    def test_parse(self):
+        data = {"Disabled": False, "Key": "results", "URL": "https://example.com", "Label": "Results"}
+        item = SimpleAPIItem.model_validate(data)
+        assert item.key == "results"
+        assert item.url == "https://example.com"
+        assert item.disabled is False
+
+    def test_roundtrip(self):
+        item = SimpleAPIItem(key="k", url="u", label="l")
+        data = item.model_dump(by_alias=True)
+        assert data["Key"] == "k"
+        assert SimpleAPIItem.model_validate(data).label == "l"
+
+
+class TestWebHook:
+    def test_parse(self):
+        data = {
+            "ID": 5, "Disabled": False, "Name": "My Hook",
+            "Type": 0, "URL": "https://hook.example.com",
+            "Fields": ["Bib", "Firstname"], "Filter": "", "OrderPos": 1,
+        }
+        hook = WebHook.model_validate(data)
+        assert hook.id == 5
+        assert hook.type == WebHookType.PARTICIPANT_NEW
+        assert hook.fields == ["Bib", "Firstname"]
+
+    def test_roundtrip(self):
+        hook = WebHook(name="test", type=WebHookType.MOD_JOB_ID, url="https://x.com")
+        data = hook.model_dump(by_alias=True)
+        assert data["Type"] == WebHookType.MOD_JOB_ID
+        assert WebHook.model_validate(data).url == "https://x.com"
+
+
+class TestTeamScore:
+    def test_parse(self):
+        data = {"ID": 1, "Name": "Mixed Relay", "Filter": "[Sex]='M'", "MaxTeams": 3}
+        ts = TeamScore.model_validate(data)
+        assert ts.id == 1
+        assert ts.name == "Mixed Relay"
+        assert ts.max_teams == 3
+
+    def test_roundtrip(self):
+        ts = TeamScore(id=2, name="Open", filter="")
+        data = ts.model_dump(by_alias=True)
+        assert data["ID"] == 2
+        assert data["Name"] == "Open"
+        assert TeamScore.model_validate(data).id == 2
+
+
+class TestArchivesModels:
+    def test_match_parse(self):
+        data = {"ID": 42, "FirstName": "Anna", "LastName": "Müller", "Year": 1985}
+        m = ArchivesMatch.model_validate(data)
+        assert m.id == 42
+        assert m.first_name == "Anna"
+        assert m.year == 1985
+
+    def test_participant_parse(self):
+        data = {
+            "ID": 1, "Lastname": "Müller", "Firstname": "Anna", "Sex": "F",
+            "Participations": [
+                {"Event": "evt1", "Contest": 2, "Bib": 99, "Time": "1:23:45",
+                 "TotRank": 5, "MFRank": 3, "AGRank": 1}
+            ],
+        }
+        p = ArchivesParticipant.model_validate(data)
+        assert p.lastname == "Müller"
+        assert len(p.participations) == 1
+        assert p.participations[0].bib == 99
+
+    def test_participation_ext_parse(self):
+        data = {
+            "EventName": "Berlin Marathon 2023", "ContestName": "Full",
+            "FinalTime": "3:45:00", "TotRank": 120, "MFRank": 80, "AGRank": 10, "Bib": 42,
+        }
+        pe = ParticipationExt.model_validate(data)
+        assert pe.event_name == "Berlin Marathon 2023"
+        assert pe.bib == 42
+
+    def test_participant_roundtrip(self):
+        p = ArchivesParticipant(id=1, lastname="Smith", firstname="John")
+        data = p.model_dump(by_alias=True)
+        assert data["Lastname"] == "Smith"
+        assert ArchivesParticipant.model_validate(data).firstname == "John"
+
+
+class TestCertificate:
+    def test_element_parse(self):
+        data = {
+            "Type": 1, "Data": "Hello", "Left": "10", "Top": "20",
+            "Width": "100", "Height": "50", "FontName": "Arial",
+            "FontSize": 12, "Page": 1, "DF": "[Firstname]",
+        }
+        el = CertificateElement.model_validate(data)
+        assert el.type == ElementType.TEXT
+        assert el.data == "Hello"
+        assert el.dynamic_format == "[Firstname]"
+
+    def test_zone_parse(self):
+        data = {"Top": "148", "Page": 1, "Type": "fold"}
+        z = CertificateZone.model_validate(data)
+        assert z.type == "fold"
+        assert z.page == 1
+
+    def test_certificate_parse(self):
+        data = {
+            "CertificateName": "BibNumber",
+            "PageSize": "A4", "PageFormat": "Portrait",
+            "Copies": 1,
+            "Fields": [{"Type": 1, "Data": "Hello", "Left": "0", "Top": "0",
+                         "Width": "50", "Height": "20", "Page": 1}],
+            "Zones": [],
+        }
+        cert = Certificate.model_validate(data)
+        assert cert.name == "BibNumber"
+        assert cert.page_size == "A4"
+        assert len(cert.elements) == 1
+        assert cert.elements[0].type == ElementType.TEXT
+
+    def test_certificate_roundtrip(self):
+        cert = Certificate(name="Test", page_size="A4", page_format="Portrait")
+        data = cert.model_dump(by_alias=True)
+        assert data["CertificateName"] == "Test"
+        assert data["PageSize"] == "A4"
+        assert Certificate.model_validate(data).page_format == "Portrait"
+
+
+class TestCertificateSet:
+    def test_parse(self):
+        data = {
+            "Name": "Age Group Awards", "CertificateName": "AwardCert",
+            "CertificateSetType": 0, "FilterRankOperator": "<=",
+            "FilterRankCompare": 3,
+        }
+        cs = CertificateSet.model_validate(data)
+        assert cs.name == "Age Group Awards"
+        assert cs.certificate == "AwardCert"
+        assert cs.certificate_set_type == CertificateSetType.SINGLE
+        assert cs.filter_rank_compare == 3
+
+    def test_roundtrip(self):
+        cs = CertificateSet(name="Top3", certificate="Cert1",
+                            certificate_set_type=CertificateSetType.TEAM)
+        data = cs.model_dump(by_alias=True)
+        assert data["Name"] == "Top3"
+        assert data["CertificateSetType"] == CertificateSetType.TEAM
+        assert CertificateSet.model_validate(data).certificate == "Cert1"
+
+
+class TestStatistics:
+    def test_parse(self):
+        data = {
+            "StatisticName": "By Country", "Type": "table",
+            "Row": "[Country]", "Col": "", "Aggregation": 1,
+        }
+        s = Statistics.model_validate(data)
+        assert s.name == "By Country"
+        assert s.aggregation == Aggregation.COUNT
+
+    def test_roundtrip(self):
+        s = Statistics(name="Test", aggregation=Aggregation.SUM, row="[Contest]")
+        data = s.model_dump(by_alias=True)
+        assert data["StatisticName"] == "Test"
+        assert data["Aggregation"] == Aggregation.SUM
+        assert Statistics.model_validate(data).row == "[Contest]"
+
+
+class TestLabel:
+    def test_parse(self):
+        data = {
+            "LabelName": "Sticker", "PageSize": 3, "PageFormat": 0,
+            "Width": "70", "Height": "36",
+            "Direction": 0, "BarcodeType": 0, "Alignment": 1,
+        }
+        label = Label.model_validate(data)
+        assert label.name == "Sticker"
+        assert label.direction == LabelDirection.DOWN_THEN_RIGHT
+        assert label.barcode_type == LabelBarcodeType.NO_BARCODE
+
+    def test_roundtrip(self):
+        label = Label(name="MyLabel", direction=LabelDirection.RIGHT_THEN_DOWN,
+                      barcode_type=LabelBarcodeType.CODE128)
+        data = label.model_dump(by_alias=True)
+        assert data["LabelName"] == "MyLabel"
+        assert data["Direction"] == LabelDirection.RIGHT_THEN_DOWN
+        assert Label.model_validate(data).barcode_type == LabelBarcodeType.CODE128

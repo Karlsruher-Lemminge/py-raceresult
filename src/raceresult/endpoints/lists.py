@@ -543,6 +543,56 @@ class ListsEndpoint:
             params["contest"] = self._int_list_to_string(contests)
         return await self._client.get(self._event_id, "lists/create", params)
 
+    async def create_newspaper(
+        self,
+        name: str,
+        contests: list[int] | None = None,
+        filter_expr: str = "",
+        selector_result: str = "",
+        lang: str = "",
+    ) -> bytes:
+        """Create a list in newspaper format.
+
+        Based on go-webapi/eventapi_lists.go:CreateNewspaper.
+        """
+        params: dict[str, Any] = {
+            "name": name,
+            "format": "newspaper",
+            "filter": filter_expr,
+            "selectorResult": selector_result,
+            "lang": lang,
+        }
+        if contests:
+            params["contest"] = self._int_list_to_string(contests)
+        return await self._client.get(self._event_id, "lists/create", params)
+
+    async def create_text(
+        self,
+        name: str,
+        charset: str = "",
+        separator: str = "",
+        contests: list[int] | None = None,
+        filter_expr: str = "",
+        selector_result: str = "",
+        lang: str = "",
+    ) -> bytes:
+        """Create a list in plain-text format.
+
+        Based on go-webapi/eventapi_lists.go:CreateText.
+        """
+        params: dict[str, Any] = {
+            "name": name,
+            "format": "text",
+            "charset": charset,
+            "separator": separator,
+            "filter": filter_expr,
+            "selectorResult": selector_result,
+            "lang": lang,
+        }
+        if contests:
+            params["contest"] = self._int_list_to_string(contests)
+        return await self._client.get(self._event_id, "lists/create", params)
+
     async def participants_not_activated(
         self,
         name: str,

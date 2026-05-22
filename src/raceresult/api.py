@@ -10,26 +10,49 @@ from typing import Any
 
 from raceresult.client import RaceResultClient
 from raceresult.endpoints.agegroups import AgeGroupsEndpoint
+from raceresult.endpoints.archives import ArchivesEndpoint
+from raceresult.endpoints.backup import BackupEndpoint
 from raceresult.endpoints.bibranges import BibRangesEndpoint
+from raceresult.endpoints.certificate_sets import CertificateSetsEndpoint
+from raceresult.endpoints.certificates import CertificatesEndpoint
+from raceresult.endpoints.chat import ChatEndpoint
 from raceresult.endpoints.contests import ContestsEndpoint
 from raceresult.endpoints.customfields import CustomFieldsEndpoint
 from raceresult.endpoints.data import DataEndpoint
+from raceresult.endpoints.dependencies import DependenciesEndpoint
 from raceresult.endpoints.email_templates import EmailTemplatesEndpoint
 from raceresult.endpoints.entryfees import EntryFeesEndpoint
 from raceresult.endpoints.exporters import ExportersEndpoint
+from raceresult.endpoints.file import FileEndpoint
+from raceresult.endpoints.forwarding import ForwardingEndpoint
+from raceresult.endpoints.general import GeneralEndpoint
+from raceresult.endpoints.group_times import GroupTimesEndpoint
 from raceresult.endpoints.history import HistoryEndpoint
+from raceresult.endpoints.information import InformationEndpoint
+from raceresult.endpoints.kiosks import KiosksEndpoint
+from raceresult.endpoints.labels import LabelsEndpoint
 from raceresult.endpoints.lists import ListsEndpoint
+from raceresult.endpoints.overwrite_values import OverwriteValuesEndpoint
 from raceresult.endpoints.participants import ParticipantsEndpoint
+from raceresult.endpoints.pictures import PicturesEndpoint
+from raceresult.endpoints.rankings import RankingsEndpoint
 from raceresult.endpoints.rawdata import RawDataEndpoint
+from raceresult.endpoints.rawdata_rules import RawDataRulesEndpoint
 from raceresult.endpoints.registrations import RegistrationsEndpoint
 from raceresult.endpoints.results import ResultsEndpoint
 from raceresult.endpoints.settings import SettingsEndpoint
+from raceresult.endpoints.simple_api import SimpleAPIEndpoint
+from raceresult.endpoints.splits import SplitsEndpoint
+from raceresult.endpoints.statistics import StatisticsEndpoint
+from raceresult.endpoints.synchronization import SynchronizationEndpoint
+from raceresult.endpoints.team_scores import TeamScoresEndpoint
 from raceresult.endpoints.times import TimesEndpoint
 from raceresult.endpoints.timing import ChipFileEndpoint
 from raceresult.endpoints.timingpoints import TimingPointsEndpoint
 from raceresult.endpoints.timingpointrules import TimingPointRulesEndpoint
-from raceresult.endpoints.kiosks import KiosksEndpoint
+from raceresult.endpoints.user_defined_fields import UserDefinedFieldsEndpoint
 from raceresult.endpoints.vouchers import VouchersEndpoint
+from raceresult.endpoints.webhooks import WebHooksEndpoint
 from raceresult.models.public import UserInfo, UserRight, OAuthToken
 
 
@@ -109,6 +132,28 @@ class EventAPI:
         self._exporters: ExportersEndpoint | None = None
         self._history: HistoryEndpoint | None = None
         self._kiosks: KiosksEndpoint | None = None
+        self._archives: ArchivesEndpoint | None = None
+        self._backup: BackupEndpoint | None = None
+        self._certificate_sets: CertificateSetsEndpoint | None = None
+        self._certificates: CertificatesEndpoint | None = None
+        self._chat: ChatEndpoint | None = None
+        self._dependencies: DependenciesEndpoint | None = None
+        self._file: FileEndpoint | None = None
+        self._forwarding: ForwardingEndpoint | None = None
+        self._group_times: GroupTimesEndpoint | None = None
+        self._information: InformationEndpoint | None = None
+        self._labels: LabelsEndpoint | None = None
+        self._overwrite_values: OverwriteValuesEndpoint | None = None
+        self._pictures: PicturesEndpoint | None = None
+        self._rankings: RankingsEndpoint | None = None
+        self._rawdata_rules: RawDataRulesEndpoint | None = None
+        self._simple_api: SimpleAPIEndpoint | None = None
+        self._splits: SplitsEndpoint | None = None
+        self._statistics: StatisticsEndpoint | None = None
+        self._synchronization: SynchronizationEndpoint | None = None
+        self._team_scores: TeamScoresEndpoint | None = None
+        self._user_defined_fields: UserDefinedFieldsEndpoint | None = None
+        self._webhooks: WebHooksEndpoint | None = None
 
     @property
     def event_id(self) -> str:
@@ -262,6 +307,138 @@ class EventAPI:
             self._kiosks = KiosksEndpoint(self._client, self._event_id)
         return self._kiosks
 
+    @property
+    def archives(self) -> ArchivesEndpoint:
+        if self._archives is None:
+            self._archives = ArchivesEndpoint(self._client, self._event_id)
+        return self._archives
+
+    @property
+    def backup(self) -> BackupEndpoint:
+        if self._backup is None:
+            self._backup = BackupEndpoint(self._client, self._event_id)
+        return self._backup
+
+    @property
+    def certificate_sets(self) -> CertificateSetsEndpoint:
+        if self._certificate_sets is None:
+            self._certificate_sets = CertificateSetsEndpoint(self._client, self._event_id)
+        return self._certificate_sets
+
+    @property
+    def certificates(self) -> CertificatesEndpoint:
+        if self._certificates is None:
+            self._certificates = CertificatesEndpoint(self._client, self._event_id)
+        return self._certificates
+
+    @property
+    def chat(self) -> ChatEndpoint:
+        if self._chat is None:
+            self._chat = ChatEndpoint(self._client, self._event_id)
+        return self._chat
+
+    @property
+    def dependencies(self) -> DependenciesEndpoint:
+        if self._dependencies is None:
+            self._dependencies = DependenciesEndpoint(self._client, self._event_id)
+        return self._dependencies
+
+    @property
+    def file(self) -> FileEndpoint:
+        if self._file is None:
+            self._file = FileEndpoint(self._client, self._event_id)
+        return self._file
+
+    @property
+    def forwarding(self) -> ForwardingEndpoint:
+        if self._forwarding is None:
+            self._forwarding = ForwardingEndpoint(self._client, self._event_id)
+        return self._forwarding
+
+    @property
+    def group_times(self) -> GroupTimesEndpoint:
+        if self._group_times is None:
+            self._group_times = GroupTimesEndpoint(self._client, self._event_id)
+        return self._group_times
+
+    @property
+    def information(self) -> InformationEndpoint:
+        if self._information is None:
+            self._information = InformationEndpoint(self._client, self._event_id)
+        return self._information
+
+    @property
+    def labels(self) -> LabelsEndpoint:
+        if self._labels is None:
+            self._labels = LabelsEndpoint(self._client, self._event_id)
+        return self._labels
+
+    @property
+    def overwrite_values(self) -> OverwriteValuesEndpoint:
+        if self._overwrite_values is None:
+            self._overwrite_values = OverwriteValuesEndpoint(self._client, self._event_id)
+        return self._overwrite_values
+
+    @property
+    def pictures(self) -> PicturesEndpoint:
+        if self._pictures is None:
+            self._pictures = PicturesEndpoint(self._client, self._event_id)
+        return self._pictures
+
+    @property
+    def rankings(self) -> RankingsEndpoint:
+        if self._rankings is None:
+            self._rankings = RankingsEndpoint(self._client, self._event_id)
+        return self._rankings
+
+    @property
+    def rawdata_rules(self) -> RawDataRulesEndpoint:
+        if self._rawdata_rules is None:
+            self._rawdata_rules = RawDataRulesEndpoint(self._client, self._event_id)
+        return self._rawdata_rules
+
+    @property
+    def simple_api(self) -> SimpleAPIEndpoint:
+        if self._simple_api is None:
+            self._simple_api = SimpleAPIEndpoint(self._client, self._event_id)
+        return self._simple_api
+
+    @property
+    def splits(self) -> SplitsEndpoint:
+        if self._splits is None:
+            self._splits = SplitsEndpoint(self._client, self._event_id)
+        return self._splits
+
+    @property
+    def statistics(self) -> StatisticsEndpoint:
+        if self._statistics is None:
+            self._statistics = StatisticsEndpoint(self._client, self._event_id)
+        return self._statistics
+
+    @property
+    def synchronization(self) -> SynchronizationEndpoint:
+        if self._synchronization is None:
+            self._synchronization = SynchronizationEndpoint(self._client, self._event_id)
+        return self._synchronization
+
+    @property
+    def team_scores(self) -> TeamScoresEndpoint:
+        if self._team_scores is None:
+            self._team_scores = TeamScoresEndpoint(self._client, self._event_id)
+        return self._team_scores
+
+    @property
+    def user_defined_fields(self) -> UserDefinedFieldsEndpoint:
+        if self._user_defined_fields is None:
+            self._user_defined_fields = UserDefinedFieldsEndpoint(self._client, self._event_id)
+        return self._user_defined_fields
+
+    @property
+    def webhooks(self) -> WebHooksEndpoint:
+        if self._webhooks is None:
+            self._webhooks = WebHooksEndpoint(self._client, self._event_id)
+        return self._webhooks
+
 
 class RaceResultAPI:
     """Main Raceresult API client.
@@ -327,6 +504,10 @@ class RaceResultAPI:
         """Exit async context manager."""
         await self._client.__aexit__(exc_type, exc_val, exc_tb)
 
+    def general(self) -> GeneralEndpoint:
+        """Get the general (non-event-specific) API endpoint."""
+        return GeneralEndpoint(self._client)
+
     async def login(
         self,
         api_key: str | None = None,
@@ -334,6 +515,7 @@ class RaceResultAPI:
         password: str | None = None,
         sign_in_as: str | None = None,
         totp: str | None = None,
+        rr_user_token: str | None = None,
     ) -> None:
         """Login to the API.
 
@@ -343,6 +525,7 @@ class RaceResultAPI:
             password: Password for authentication
             sign_in_as: Sign in as another user
             totp: Time-based OTP for 2FA
+            rr_user_token: RR user token
         """
         await self._client.login(
             api_key=api_key,
@@ -350,6 +533,7 @@ class RaceResultAPI:
             password=password,
             sign_in_as=sign_in_as,
             totp=totp,
+            rr_user_token=rr_user_token,
         )
 
     async def logout(self) -> None:
