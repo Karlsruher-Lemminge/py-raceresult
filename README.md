@@ -7,7 +7,7 @@ You can receive an Raceresult API Key in your Account.
 ## Features
 
 - **Async-first design** using httpx for non-blocking I/O
-- **Full API coverage** with 21 endpoint modules and 100+ methods
+- **Full API coverage** with 22 endpoint modules and 100+ methods
 - **Type-safe** with Pydantic v2 models and full type annotations
 - **Multiple auth methods** including API key, username/password, and 2FA
 - **Custom type handling** for Raceresult date/time/decimal formats
@@ -96,6 +96,7 @@ Once logged in, access event-specific endpoints via `api.event(event_id)`:
 | **Results** | `results`, `lists`, `exporters` | Result definitions and output generation |
 | **Registration** | `registrations`, `vouchers` | Registration forms and discount codes |
 | **Communication** | `email_templates` | Email and SMS templates |
+| **Check-In** | `kiosks` | Check-in kiosk configuration |
 | **Audit** | `history` | Change tracking |
 
 ## Usage Examples
@@ -186,6 +187,7 @@ All API responses are validated using Pydantic models. Key models include:
 - `Registration`, `Step`, `Element`, `FormField` - Registration forms
 - `Voucher`, `EntryFee` - Payment and pricing
 - `EmailTemplate` - Communication templates
+- `Kiosk`, `KioskStep`, `KioskDisplayField`, `KioskEditField` - Check-in kiosk
 
 Import models from `raceresult.models`:
 

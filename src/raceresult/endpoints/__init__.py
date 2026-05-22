@@ -9,6 +9,7 @@ from raceresult.endpoints.email_templates import EmailTemplatesEndpoint
 from raceresult.endpoints.entryfees import EntryFeesEndpoint
 from raceresult.endpoints.exporters import ExportersEndpoint
 from raceresult.endpoints.history import HistoryEndpoint
+from raceresult.endpoints.kiosks import KiosksEndpoint
 from raceresult.endpoints.lists import ListsEndpoint
 from raceresult.endpoints.participants import ParticipantsEndpoint, Identifier
 from raceresult.endpoints.rawdata import RawDataEndpoint
@@ -48,4 +49,6 @@ __all__ = [
     # Communication
     "EmailTemplatesEndpoint",
     "VouchersEndpoint",
+    # Check-In
+    "KiosksEndpoint",
 ]

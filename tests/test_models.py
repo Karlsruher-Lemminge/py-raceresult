@@ -12,6 +12,7 @@ from raceresult.models.registration import Registration, Step, Element, FormFiel
 from raceresult.models.payment import Voucher, VoucherType
 from raceresult.models.email import EmailTemplate, TemplateType
 from raceresult.models.timing import ChipFileEntry, TimingPoint
+from raceresult.models.kiosk import Kiosk, KioskAfterSave, KioskStep, KioskDisplayField, KioskEditField, KioskSearchField
 
 
 class TestRRDate:
@@ -205,3 +206,148 @@ class TestChipFileEntry:
         entry = ChipFileEntry(transponder="ABC123", identification="42")
         assert entry.transponder == "ABC123"
         assert entry.identification == "42"
+
+
+class TestKiosk:
+    """Tests for Kiosk models."""
+
+    def test_kiosk_from_dict(self):
+        """Test parsing a full kiosk config from API response."""
+        data = {
+            "Name": "CheckIn",
+            "Key": "abc123",
+            "Enabled": True,
+            "EnabledFrom": None,
+            "EnabledTo": None,
+            "TransponderMode": 0,
+            "AcceptedTransponders": 0,
+            "IgnoreBibRanges": False,
+            "AutoFinish": False,
+            "CSS": "",
+            "Title": "My Kiosk",
+            "Steps": [
+                {
+                    "Type": "search",
+                    "Label": "Search",
+                    "Title": "",
+                    "Text": "",
+                    "OnlyShowIf": "",
+                    "SearchFields": [{"Field": "Bib", "Hide": False, "Function": ""}],
+                    "DisplayFields": [{"Type": "setting", "Value": "EventName", "Label": ""}],
+                    "EditFields": None,
+                    "Settings": {"AutoSel1": True, "Placeholder": "Enter bib"},
+                },
+                {
+                    "Type": "edit",
+                    "Label": "Check-In",
+                    "Title": "",
+                    "Text": "",
+                    "OnlyShowIf": "",
+                    "SearchFields": None,
+                    "DisplayFields": [{"Type": "field", "Value": "FLName", "Label": ""}],
+                    "EditFields": [
+                        {
+                            "Label": "Bib",
+                            "Field": "bib",
+                            "Special": "",
+                            "Mandatory": True,
+                            "ValidationRule": "",
+                            "ValidationMsg": "",
+                            "EventTools": "",
+                        }
+                    ],
+                    "Settings": None,
+                },
+            ],
+            "AfterSave": None,
+        }
+        kiosk = Kiosk.model_validate(data)
+        assert kiosk.name == "CheckIn"
+        assert kiosk.enabled is True
+        assert kiosk.title == "My Kiosk"
+        assert len(kiosk.steps) == 2
+
+        search_step = kiosk.steps[0]
+        assert search_step.type == "search"
+        assert search_step.search_fields is not None
+        assert len(search_step.search_fields) == 1
+        assert search_step.search_fields[0].field == "Bib"
+        assert search_step.settings == {"AutoSel1": True, "Placeholder": "Enter bib"}
+
+        edit_step = kiosk.steps[1]
+        assert edit_step.type == "edit"
+        assert edit_step.edit_fields is not None
+        assert edit_step.edit_fields[0].mandatory is True
+
+    def test_kiosk_roundtrip(self):
+        """Test that model_dump produces valid data for model_validate."""
+        kiosk = Kiosk(
+            name="Test",
+            enabled=False,
+            title="Test Kiosk",
+            steps=[
+                KioskStep(
+                    type="edit",
+                    label="Youth Info",
+                    only_show_if="AgeOnDate(2026;06;13)<18",
+                    display_fields=[
+                        KioskDisplayField(type="field", value="EBZustimmung", label="EB Consent"),
+                        KioskDisplayField(type="field", value="EBName", label="EB Name"),
+                    ],
+                )
+            ],
+        )
+        data = kiosk.model_dump(by_alias=True)
+        kiosk2 = Kiosk.model_validate(data)
+        assert kiosk2.name == "Test"
+        assert len(kiosk2.steps) == 1
+        assert kiosk2.steps[0].only_show_if == "AgeOnDate(2026;06;13)<18"
+        assert kiosk2.steps[0].display_fields is not None
+        assert kiosk2.steps[0].display_fields[0].value == "EBZustimmung"
+
+    def test_kiosk_step_only_show_if(self):
+        """Test that OnlyShowIf is correctly serialized."""
+        step = KioskStep(type="edit", label="Youth", only_show_if="AgeOnDate(2026;6;13)<18")
+        data = step.model_dump(by_alias=True)
+        assert data["OnlyShowIf"] == "AgeOnDate(2026;6;13)<18"
+
+    def test_kiosk_edit_field_mandatory(self):
+        """Test KioskEditField mandatory flag."""
+        field = KioskEditField(label="Bib", field="bib", mandatory=True)
+        assert field.mandatory is True
+        data = field.model_dump(by_alias=True)
+        assert data["Mandatory"] is True
+
+    def test_kiosk_after_save_SaveValue(self):
+        """Test KioskAfterSave SaveValue configuration."""
+        action = KioskAfterSave(type="SaveValue", destination="CheckIn", value="1")
+        data = action.model_dump(by_alias=True)
+        assert data["Type"] == "SaveValue"
+        assert data["Destination"] == "CheckIn"
+        assert data["Value"] == "1"
+
+    def test_kiosk_after_save_roundtrip(self):
+        """Test Kiosk with AfterSave survives model round-trip."""
+        kiosk = Kiosk(
+            name="Test",
+            after_save=[KioskAfterSave(type="SaveValue", destination="CheckIn", value="1")],
+        )
+        data = kiosk.model_dump(by_alias=True)
+        kiosk2 = Kiosk.model_validate(data)
+        assert kiosk2.after_save is not None
+        assert len(kiosk2.after_save) == 1
+        assert kiosk2.after_save[0].destination == "CheckIn"
+
+    def test_kiosk_after_save_from_api_response(self):
+        """Test parsing AfterSave from real API response format."""
+        data = {
+            "Name": "Check-In", "Key": "x", "Enabled": False,
+            "Steps": [], "AfterSave": [
+                {"Type": "SaveValue", "Value": "1", "Destination": "CheckIn",
+                 "Filter": "", "Printer": "", "Flags": []}
+            ],
+        }
+        kiosk = Kiosk.model_validate(data)
+        assert kiosk.after_save is not None
+        assert kiosk.after_save[0].type == "SaveValue"
+        assert kiosk.after_save[0].destination == "CheckIn"

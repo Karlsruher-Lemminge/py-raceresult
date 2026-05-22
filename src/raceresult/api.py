@@ -28,6 +28,7 @@ from raceresult.endpoints.times import TimesEndpoint
 from raceresult.endpoints.timing import ChipFileEndpoint
 from raceresult.endpoints.timingpoints import TimingPointsEndpoint
 from raceresult.endpoints.timingpointrules import TimingPointRulesEndpoint
+from raceresult.endpoints.kiosks import KiosksEndpoint
 from raceresult.endpoints.vouchers import VouchersEndpoint
 from raceresult.models.public import UserInfo, UserRight, OAuthToken
 
@@ -107,6 +108,7 @@ class EventAPI:
         self._lists: ListsEndpoint | None = None
         self._exporters: ExportersEndpoint | None = None
         self._history: HistoryEndpoint | None = None
+        self._kiosks: KiosksEndpoint | None = None
 
     @property
     def event_id(self) -> str:
@@ -252,6 +254,13 @@ class EventAPI:
         if self._history is None:
             self._history = HistoryEndpoint(self._client, self._event_id)
         return self._history
+
+    @property
+    def kiosks(self) -> KiosksEndpoint:
+        """Get the kiosks endpoint."""
+        if self._kiosks is None:
+            self._kiosks = KiosksEndpoint(self._client, self._event_id)
+        return self._kiosks
 
 
 class RaceResultAPI:
