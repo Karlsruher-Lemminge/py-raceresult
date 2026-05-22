@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 from enum import IntEnum
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -268,6 +269,195 @@ SPLIT_TIME_MODE_MIN_100M = -5
 SPLIT_TIME_MODE_KMH = -6
 SPLIT_TIME_MODE_MPH = -7
 SPLIT_TIME_MODE_MPS = -8
+
+
+class TeamScore(BaseModel):
+    """Team score definition.
+
+    Based on go-model/model.go:TeamScore.
+    """
+
+    id: int = Field(default=0, alias="ID")
+    result_id1: int = Field(default=0, alias="ResultID1")
+    result_id2: int = Field(default=0, alias="ResultID2")
+    result_id3: int = Field(default=0, alias="ResultID3")
+    result_id4: int = Field(default=0, alias="ResultID4")
+    result_mode1: int = Field(default=0, alias="ResultMode1")
+    result_mode2: int = Field(default=0, alias="ResultMode2")
+    result_mode3: int = Field(default=0, alias="ResultMode3")
+    result_mode4: int = Field(default=0, alias="ResultMode4")
+    sort_desc1: bool = Field(default=False, alias="SortDesc1")
+    sort_desc2: bool = Field(default=False, alias="SortDesc2")
+    sort_desc3: bool = Field(default=False, alias="SortDesc3")
+    real_time: bool = Field(default=False, alias="RealTime")
+    min_total: int = Field(default=0, alias="MinTotal")
+    max_total: int = Field(default=0, alias="MaxTotal")
+    min_female: int = Field(default=0, alias="MinFemale")
+    max_female: int = Field(default=0, alias="MaxFemale")
+    max_teams: int = Field(default=0, alias="MaxTeams")
+    filter: str = Field(default="", alias="Filter")
+    time_format: str = Field(default="", alias="TimeFormat")
+    lap_times: int = Field(default=0, alias="LapTimes")
+    lap_times_lemans: bool = Field(default=False, alias="LapTimesLemans")
+    lap_times_zero_start: bool = Field(default=False, alias="LapTimesZeroStart")
+    name: str = Field(default="", alias="Name")
+    lap_mode_location: str = Field(default="", alias="LapModeLocation")
+    team_sort: str = Field(default="", alias="TeamSort")
+    assigning1: str = Field(default="", alias="Assigning1")
+    grouping1: str = Field(default="", alias="Grouping1")
+    assigning2: str = Field(default="", alias="Assigning2")
+    grouping2: str = Field(default="", alias="Grouping2")
+    assigning3: str = Field(default="", alias="Assigning3")
+    grouping3: str = Field(default="", alias="Grouping3")
+    assigning4: str = Field(default="", alias="Assigning4")
+    grouping4: str = Field(default="", alias="Grouping4")
+    use_ties: bool = Field(default=False, alias="UseTies")
+    lap_times_subtract_t0: bool = Field(default=False, alias="LapTimesSubtractT0")
+    lap_times_count_lemans_as_lap: bool = Field(default=False, alias="LapTimesCountLemansAsLap")
+    lap_times_penalty_time_result: int = Field(default=0, alias="LapTimesPenaltyTimeResult")
+    lap_times_penalty_laps_result: int = Field(default=0, alias="LapTimesPenaltyLapsResult")
+    lap_times_min_lap_time: RRDecimal = Field(default=Decimal(0), alias="LapTimesMinLapTime")
+    lap_times_ignore_before: RRDecimal = Field(default=Decimal(0), alias="LapTimesIgnoreBefore")
+    lap_times_ignore_after: RRDecimal = Field(default=Decimal(0), alias="LapTimesIgnoreAfter")
+
+    model_config = {"populate_by_name": True}
+
+
+class RawDataRule(BaseModel):
+    """Raw data processing rule.
+
+    Based on go-model/model.go:RawDataRule.
+    """
+
+    id: int = Field(default=0, alias="ID")
+    result_id: int = Field(default=0, alias="ResultID")
+    contest_id: int = Field(default=0, alias="ContestID")
+    mode: int = Field(default=0, alias="Mode")
+    n: int = Field(default=0, alias="N")
+    min: int = Field(default=0, alias="Min")
+    min_offset: RRDecimal = Field(default=Decimal(0), alias="MinOffset")
+    max: int = Field(default=0, alias="Max")
+    max_offset: RRDecimal = Field(default=Decimal(0), alias="MaxOffset")
+    ref: int = Field(default=0, alias="Ref")
+    ref_offset: RRDecimal = Field(default=Decimal(0), alias="RefOffset")
+
+    model_config = {"populate_by_name": True}
+
+
+class SimpleAPIItem(BaseModel):
+    """SimpleAPI entry.
+
+    Based on go-model/model.go:SimpleAPIItem.
+    """
+
+    disabled: bool = Field(default=False, alias="Disabled")
+    key: str = Field(default="", alias="Key")
+    url: str = Field(default="", alias="URL")
+    label: str = Field(default="", alias="Label")
+
+    model_config = {"populate_by_name": True}
+
+
+class WebHookType(IntEnum):
+    """Trigger type for a webhook.
+
+    Based on go-model/model.go:WebHookType.
+    """
+
+    PARTICIPANT_NEW = 0
+    PARTICIPANT_UPDATED = 1
+    RAW_DATA_NEW = 2
+    MOD_JOB_ID = 3
+    MOD_JOB_ID_SETTINGS = 4
+
+
+class WebHook(BaseModel):
+    """Webhook definition.
+
+    Based on go-model/model.go:WebHook.
+    """
+
+    id: int = Field(default=0, alias="ID")
+    disabled: bool = Field(default=False, alias="Disabled")
+    name: str = Field(default="", alias="Name")
+    type: WebHookType = Field(default=WebHookType.PARTICIPANT_NEW, alias="Type")
+    url: str = Field(default="", alias="URL")
+    fields: list[str] = Field(default_factory=list, alias="Fields")
+    filter: str = Field(default="", alias="Filter")
+    order_pos: int = Field(default=0, alias="OrderPos")
+
+    model_config = {"populate_by_name": True}
+
+
+class ForwardingInfo(BaseModel):
+    """Statistics about the backup/forwarding connection.
+
+    Based on go-model/model.go:ForwardingInfo.
+    """
+
+    bytes_sent: int = Field(default=0, alias="BytesSent")
+    bytes_received: int = Field(default=0, alias="BytesReceived")
+
+    model_config = {"populate_by_name": True}
+
+
+class ChatMessage(BaseModel):
+    """Chat message.
+
+    Based on go-model/model.go:ChatMessage.
+    Uses single-character JSON keys: i, u, d, m.
+    """
+
+    id: int = Field(default=0, alias="i")
+    username: str = Field(default="", alias="u")
+    date: str = Field(default="", alias="d")
+    message: str = Field(default="", alias="m")
+
+    model_config = {"populate_by_name": True}
+
+
+class Version(BaseModel):
+    """Software version.
+
+    Based on go-model/model.go:Version.
+    Uses lowercase JSON keys.
+    """
+
+    major: int = Field(default=0, alias="major")
+    minor: int = Field(default=0, alias="minor")
+    revision: int = Field(default=0, alias="revision")
+    tag: str = Field(default="", alias="tag")
+    hash: str = Field(default="", alias="hash")
+
+    model_config = {"populate_by_name": True}
+
+
+class GroupTime(BaseModel):
+    """Single group start time entry.
+
+    Based on go-model/model.go:GroupTime.
+    ID and Item are interface{} in Go.
+    """
+
+    id: Any = Field(default=None, alias="ID")
+    time: RRDecimal = Field(default=Decimal(0), alias="Time")
+    item: Any = Field(default=None, alias="Item")
+    count: int = Field(default=0, alias="Count")
+
+    model_config = {"populate_by_name": True}
+
+
+class GroupTimes(BaseModel):
+    """Group/wave start times collection.
+
+    Based on go-model/model.go:GroupTimes.
+    """
+
+    mode: str = Field(default="", alias="Mode")
+    wave_field: str = Field(default="", alias="WaveField")
+    items: list[GroupTime] = Field(default_factory=list, alias="Items")
+
+    model_config = {"populate_by_name": True}
 
 
 class UserDefinedField(BaseModel):

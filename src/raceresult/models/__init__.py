@@ -46,6 +46,14 @@ from raceresult.models.timing import (
     Passing,
     PassingToProcess,
 )
+from raceresult.models.kiosk import (
+    Kiosk,
+    KioskAfterSave,
+    KioskStep,
+    KioskDisplayField,
+    KioskEditField,
+    KioskSearchField,
+)
 from raceresult.models.public import UserInfo, UserRight, OAuthToken
 
 __all__ = [
@@ -100,6 +108,13 @@ __all__ = [
     "Time",
     "Passing",
     "PassingToProcess",
+    # Kiosk
+    "Kiosk",
+    "KioskAfterSave",
+    "KioskStep",
+    "KioskDisplayField",
+    "KioskEditField",
+    "KioskSearchField",
     # Public
     "UserInfo",
     "UserRight",
