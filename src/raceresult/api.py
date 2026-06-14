@@ -11,6 +11,8 @@ from typing import Any
 from raceresult.client import RaceResultClient
 from raceresult.endpoints.agegroups import AgeGroupsEndpoint
 from raceresult.endpoints.bibranges import BibRangesEndpoint
+from raceresult.endpoints.certificates import CertificatesEndpoint
+from raceresult.endpoints.certificatesets import CertificateSetsEndpoint
 from raceresult.endpoints.contests import ContestsEndpoint
 from raceresult.endpoints.customfields import CustomFieldsEndpoint
 from raceresult.endpoints.data import DataEndpoint
@@ -107,6 +109,8 @@ class EventAPI:
         self._lists: ListsEndpoint | None = None
         self._exporters: ExportersEndpoint | None = None
         self._history: HistoryEndpoint | None = None
+        self._certificates: CertificatesEndpoint | None = None
+        self._certificate_sets: CertificateSetsEndpoint | None = None
 
     @property
     def event_id(self) -> str:
@@ -252,6 +256,22 @@ class EventAPI:
         if self._history is None:
             self._history = HistoryEndpoint(self._client, self._event_id)
         return self._history
+
+    @property
+    def certificates(self) -> CertificatesEndpoint:
+        """Get the certificates endpoint."""
+        if self._certificates is None:
+            self._certificates = CertificatesEndpoint(self._client, self._event_id)
+        return self._certificates
+
+    @property
+    def certificate_sets(self) -> CertificateSetsEndpoint:
+        """Get the certificate sets endpoint."""
+        if self._certificate_sets is None:
+            self._certificate_sets = CertificateSetsEndpoint(
+                self._client, self._event_id
+            )
+        return self._certificate_sets
 
 
 class RaceResultAPI:
