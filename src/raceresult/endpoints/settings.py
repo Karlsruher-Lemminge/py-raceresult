@@ -138,4 +138,5 @@ class SettingsEndpoint:
         """
         params = {"prefix": prefix}
         result = await self._client.get_json(self._event_id, "settings/settingnamesbyprefix", params)
-        return result if result else []
+        # The API returns suffixes (the part after the prefix), not full names.
+        return [prefix + s for s in result] if result else []
