@@ -7,10 +7,12 @@ You can receive an Raceresult API Key in your Account.
 ## Features
 
 - **Async-first design** using httpx for non-blocking I/O
-- **Full API coverage** with 21 endpoint modules and 100+ methods
+- **Full API coverage** with 23 endpoint modules and 100+ methods
 - **Type-safe** with Pydantic v2 models and full type annotations
 - **Multiple auth methods** including API key, username/password, and 2FA
 - **Custom type handling** for Raceresult date/time/decimal formats
+- **Certificate generation** — create individual or bulk PDF/JPG certificates (Urkunden)
+- **Portal settings** — read and write all my.raceresult.com page configuration via the `Portal` prefix
 
 ## Installation
 
@@ -94,6 +96,7 @@ Once logged in, access event-specific endpoints via `api.event(event_id)`:
 | **Event Config** | `contests`, `agegroups`, `bibranges`, `customfields`, `entryfees` | Event structure and pricing |
 | **Timing** | `times`, `rawdata`, `timingpoints`, `timingpointrules`, `chipfile` | Timing device data and configuration |
 | **Results** | `results`, `lists`, `exporters` | Result definitions and output generation |
+| **Certificates** | `certificates`, `certificate_sets` | Certificate (Urkunden) templates and bulk PDF generation |
 | **Registration** | `registrations`, `vouchers` | Registration forms and discount codes |
 | **Communication** | `email_templates` | Email and SMS templates |
 | **Audit** | `history` | Change tracking |
@@ -176,6 +179,82 @@ csv_bytes = await event.lists.create_csv(
 )
 ```
 
+### Certificates (Urkunden)
+
+```python
+event = api.event("event-id")
+
+# List available certificate templates
+names = await event.certificates.names()
+print(names)  # ['Urkunde', 'UrkundeMitSponsoren', ...]
+
+# Get certificate definition (template, elements, page size)
+cert = await event.certificates.get("Urkunde")
+print(f"{cert.page_size.value} {cert.page_format.value}, {len(cert.elements)} elements")
+
+# Generate a PDF certificate for one participant (by bib number)
+pdf = await event.certificates.create_pdf("Urkunde", page=1, bib=42, lang="de")
+with open("urkunde_42.pdf", "wb") as f:
+    f.write(pdf)
+
+# Generate a JPG preview
+jpg = await event.certificates.create_jpg("Urkunde", page=1, bib=42, dpi=150, lang="de")
+
+# List certificate sets (define who gets which certificate)
+set_names = await event.certificate_sets.names()
+cs = await event.certificate_sets.get(set_names[0])
+print(f"Set '{cs.name}' uses template '{cs.certificate}'")
+
+# Count participants included in a set
+n = await event.certificate_sets.count("Urkunde", contests=[1, 2])
+print(f"{n} participants will receive a certificate")
+
+# Generate bulk PDF for all participants in a set
+bulk_pdf = await event.certificate_sets.create("Urkunde", contests=[1], lang="de")
+with open("alle_urkunden.pdf", "wb") as f:
+    f.write(bulk_pdf)
+```
+
+### my.raceresult.com Portal Settings
+
+The my.raceresult.com pages (Participants, Results, Live) are fully configurable
+via the `settings` endpoint using the `Portal` prefix.
+
+```python
+event = api.event("event-id")
+
+# Read all portal settings (228+ keys)
+names = await event.settings.names_by_prefix("Portal")
+vals = await event.settings.get(*names)
+
+# Page visibility windows (pages 1–4: Results, Participants, …, Live)
+print(vals["PortalShowFrom1"])   # e.g. "2026-05-17"
+print(vals["PortalShowUntil1"])  # e.g. "2100-12-31 23:59:59"
+print(vals["PortalShowFrom4"])   # Live page start
+print(vals["PortalShowUntil4"])  # Live page end (often just the race day)
+
+# Registration window
+print(vals["PortalRegEnabled"])  # True/False
+print(vals["PortalRegFrom"])     # "2026-02-01"
+print(vals["PortalRegUntil"])    # "2026-05-10 23:59:59"
+
+# Change a value
+await event.settings.save_value("PortalShowUntil4", "2026-05-18 23:59:59")
+```
+
+Key `Portal` setting groups:
+
+| Prefix | Description |
+|--------|-------------|
+| `PortalShowFrom/Until1..4` | Visibility window for each portal page |
+| `PortalRegEnabled/From/Until` | Online registration window |
+| `PortalListsJSON`, `PortalLists2JSON`, … | Lists shown on each page |
+| `PortalLinkCertificates1..4` | Whether certificates are linked on each page |
+| `PortalCertificateSetsJSON` | Certificate sets and their display modes |
+| `PortalConf*` | Confirmation email content and routing |
+| `PortalPay*` | Payment provider configuration |
+| `PortalOrganizer*` | Organizer contact info shown on the portal |
+
 ## Models
 
 All API responses are validated using Pydantic models. Key models include:
@@ -186,6 +265,8 @@ All API responses are validated using Pydantic models. Key models include:
 - `Registration`, `Step`, `Element`, `FormField` - Registration forms
 - `Voucher`, `EntryFee` - Payment and pricing
 - `EmailTemplate` - Communication templates
+- `Certificate`, `Element`, `Zone` - Certificate templates with layout elements
+- `CertificateSet` - Certificate set rules (filter, sort, bulk generation)
 
 Import models from `raceresult.models`:
 
