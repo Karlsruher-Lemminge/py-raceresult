@@ -9,7 +9,7 @@ from decimal import Decimal
 from enum import Enum, IntEnum
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from raceresult.models.types import RRDecimal
 
@@ -183,6 +183,11 @@ class Certificate(BaseModel):
     zones: list[Zone] = Field(default_factory=list, alias="Zones")
 
     model_config = {"populate_by_name": True}
+
+    @field_validator("elements", "zones", mode="before")
+    @classmethod
+    def _none_to_list(cls, v: object) -> object:
+        return v if v is not None else []
 
 
 class CertificatesEndpoint:
