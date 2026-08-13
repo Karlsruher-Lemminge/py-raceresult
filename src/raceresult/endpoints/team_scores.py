@@ -23,9 +23,17 @@ class TeamScoresEndpoint:
         return [TeamScore.model_validate(x) for x in (result or [])]
 
     async def get_one(self, id: int) -> TeamScore:
-        """Return the team score with the given ID."""
+        """Return the team score with the given ID.
+
+        Note: unlike ranks/get and splits/get, teamscores/get returns an
+        array even when queried by ID. Based on
+        go-webapi/eventapi_teamscores.go:46-53.
+        """
         result = await self._client.get_json(self._event_id, "teamscores/get", {"id": id})
-        return TeamScore.model_validate(result)
+        items = [TeamScore.model_validate(x) for x in (result or [])]
+        if not items:
+            raise ValueError(f"team score {id} not found")
+        return items[0]
 
     async def delete(self, id: int) -> None:
         """Delete a team score."""
