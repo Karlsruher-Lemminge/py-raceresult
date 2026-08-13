@@ -1,5 +1,11 @@
 # py-raceresult
 
+[![CI](https://github.com/Karlsruher-Lemminge/py-raceresult/actions/workflows/ci.yml/badge.svg)](https://github.com/Karlsruher-Lemminge/py-raceresult/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Checked with mypy](https://img.shields.io/badge/mypy-strict-blue)](https://mypy-lang.org/)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+
 Async Python client for the [Raceresult](https://www.raceresult.com/) event management API. This is unofficial Python implementation of [Raceresult go-webapi](https://github.com/raceresult/go-webapi) Vibe Coded with Claude Code. **Use at your own risk.**
 
 You can receive an Raceresult API Key in your Account.
@@ -8,11 +14,15 @@ You can receive an Raceresult API Key in your Account.
 
 - **Async-first design** using httpx for non-blocking I/O
 - **Full API coverage** with 44 endpoint modules matching go-webapi
-- **Type-safe** with Pydantic v2 models and full type annotations
+- **Type-safe** with Pydantic v2 models, full type annotations, and a `py.typed` marker
 - **Multiple auth methods** including API key, username/password, 2FA, and RR user token
 - **Custom type handling** for Raceresult date/time/decimal formats
 - **Certificate generation** — create individual or bulk PDF/JPG certificates (Urkunden)
 - **Portal settings** — read and write all my.raceresult.com page configuration via the `Portal` prefix
+
+Every endpoint, query parameter and JSON field name in this client is ported
+from — and verified against — the official Go reference client, so the wire
+format matches what the Raceresult server actually expects.
 
 ## Installation
 
@@ -128,7 +138,7 @@ count = await event.data.count(filter_expr="[Status]=1")
 data = await event.data.list(
     fields=["Bib", "Firstname", "Lastname", "Contest"],
     filter_expr="[Contest]=1",
-    sort_by="Bib",
+    sort=["Bib"],
     limit_to=100
 )
 for row in data:
@@ -180,7 +190,7 @@ list_names = await event.lists.names()
 # Generate PDF
 pdf_bytes = await event.lists.create_pdf(
     name=list_names[0],
-    contest=1
+    contests=[1]
 )
 with open("results.pdf", "wb") as f:
     f.write(pdf_bytes)
@@ -188,7 +198,7 @@ with open("results.pdf", "wb") as f:
 # Export as CSV
 csv_bytes = await event.lists.create_csv(
     name=list_names[0],
-    contest=1
+    contests=[1]
 )
 ```
 
@@ -276,7 +286,7 @@ All API responses are validated using Pydantic v2 models. Key models:
 |--------|--------|
 | `raceresult.models.event` | `Contest`, `AgeGroup`, `BibRange`, `EntryFee`, `Ranking`, `Split`, `TeamScore`, `WebHook`, `ChatMessage`, `GroupTimes`, `RawDataRule`, `SimpleAPIItem`, `Version`, `ForwardingInfo` |
 | `raceresult.models.participant` | `Participant`, `ParticipantNewResponse` |
-| `raceresult.models.timing` | `TimingPoint`, `TimingPointRule`, `RawData`, `Time`, `Passing` |
+| `raceresult.models.timing` | `TimingPoint`, `TimingPointRule`, `RawData`, `Time`, `Passing`, `PassingPosition` |
 | `raceresult.models.registration` | `Registration`, `Step`, `Element`, `FormField` |
 | `raceresult.models.payment` | `Voucher`, `VoucherType` |
 | `raceresult.models.email` | `EmailTemplate` |
@@ -293,9 +303,104 @@ from raceresult.endpoints.certificates import Certificate
 from raceresult.models.statistic import Statistics, Aggregation
 ```
 
+## Behaviour worth knowing
+
+A few places where the Raceresult wire format leaks into the Python API.
+These match the Go reference client exactly; deviating from them causes
+silent data corruption rather than errors.
+
+### Dates and times are naive unless the server sends a timezone
+
+Raceresult transmits datetimes in three forms, and only one carries a zone:
+
+| Wire value | Python value |
+|------------|--------------|
+| `"2024-05-01"` | `datetime(2024, 5, 1)` — naive |
+| `"2024-05-01 10:00:00"` | `datetime(2024, 5, 1, 10, 0)` — naive |
+| `"2024-05-01T10:00:00+02:00"` | timezone-aware |
+| `""`, `"1899-12-30"`, `"0001-01-01"` | `None` |
+
+Zoneless values stay **naive** on purpose — they are event-local, and the Go
+model tracks this with an explicit `hasZone` flag. Attaching UTC to them would
+turn a 10:00 local start time into 12:00 on the next save. To compare a model
+value against `datetime.now(timezone.utc)`, normalise it first:
+
+```python
+from raceresult.models.types import align_timezone
+
+now = datetime.now(timezone.utc)
+if voucher.valid_until and now > align_timezone(voucher.valid_until, now):
+    ...
+```
+
+Values are also truncated to whole seconds on the way out, because the server
+parses datetimes by string length and rejects anything with microseconds.
+
+### Field lists may contain expressions
+
+Field, sort and group parameters are sent as a JSON array, not a comma-joined
+string, so expressions containing commas survive intact:
+
+```python
+rows = await event.data.list(fields=['Bib', 'IIF([Sex]="m","M","W")'])
+```
+
+### `Identifier.by_filter` conflicts with an explicit filter
+
+`by_filter` has no equivalent in go-webapi and maps onto the same `filter`
+query parameter that several endpoints expose directly. Passing both raises
+`ValueError` instead of silently discarding one of them:
+
+```python
+await event.participants.delete(filter_expr="[Contest]=1")            # ok
+await event.participants.delete(identifier=Identifier.by_bib(42))     # ok
+await event.participants.delete(                                      # ValueError
+    filter_expr="[Contest]=1", identifier=Identifier.by_filter("[Bib]=99")
+)
+```
+
+### Empty collections arrive as `null`
+
+The API returns JSON `null` rather than `[]`/`{}` for empty lists and maps.
+Models coerce these to empty collections, so `ranking.sort` is `[]` rather
+than raising or being `None`.
+
 ## Requirements
 
-- Python 3.9+
+- Python 3.9 – 3.13
 - httpx >= 0.25.0
 - pydantic >= 2.0.0
+
+## Development
+
+The project uses [uv](https://docs.astral.sh/uv/).
+
+```bash
+uv sync --extra dev
+
+uv run pytest                  # tests
+uv run ruff check .            # lint
+uv run mypy src/raceresult     # type-check (strict)
+uv build                       # sdist + wheel
+```
+
+`tests/manual_*.py` are smoke-test scripts, not part of the suite. They need a
+live event and read `API_KEY` from a local `.env`:
+
+```bash
+uv run python tests/manual_test_live.py <event-id>
+```
+
+CI runs lint, strict type-checking and the test suite on Python 3.9–3.13.
+
+## Releasing
+
+1. Bump `version` in `pyproject.toml` and update `CHANGELOG.md`.
+2. Tag the commit: `git tag v0.2.0 && git push origin v0.2.0`.
+
+The release workflow re-runs the full CI gates, verifies the tag matches the
+project version, builds the distributions and creates a GitHub release.
+Publishing to PyPI additionally requires a `pypi` environment configured as a
+[Trusted Publisher](https://docs.pypi.org/trusted-publishers/) and the
+repository variable `PUBLISH_TO_PYPI` set to `true`.
 

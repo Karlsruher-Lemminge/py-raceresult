@@ -16,7 +16,6 @@ keywords = ["raceresult", "api", "timing", "race", "sports"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -28,37 +27,50 @@ dependencies = [
     "httpx>=0.25.0",
     "pydantic>=2.0.0",
     "eval_type_backport>=0.1.3;python_version<'3.10'",
-    "pytest>=8.4.2",
-    "dotenv>=0.9.9",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.0.0",
+    "pytest>=8.0.0",
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.0.0",
+    "python-dotenv>=1.0.0",
     "ruff>=0.1.0",
     "mypy>=1.0.0",
 ]
 
 [project.urls]
-Homepage = "https://github.com/valerius/py-raceresult"
-Repository = "https://github.com/valerius/py-raceresult"
+Homepage = "https://github.com/Karlsruher-Lemminge/py-raceresult"
+Repository = "https://github.com/Karlsruher-Lemminge/py-raceresult"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/raceresult"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/raceresult/py.typed" = "raceresult/py.typed"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 
 [tool.ruff]
-line-length = 100
+# Pydantic Field(...) declarations run long; 110 keeps them on one line.
+line-length = 110
 target-version = "py39"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]
 
+[tool.ruff.lint.per-file-ignores]
+# The manual_* scripts intentionally adjust sys.path before importing.
+"tests/manual_*.py" = ["E402"]
+
 [tool.mypy]
 python_version = "3.9"
 strict = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+# The manual_* scripts are throwaway smoke-test drivers, not library code.
+module = "tests.*"
+ignore_errors = true
