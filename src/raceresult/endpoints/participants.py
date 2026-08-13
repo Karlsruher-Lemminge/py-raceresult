@@ -405,6 +405,51 @@ class ParticipantsEndpoint:
         result = await self._client.get_json(self._event_id, "part/frequentclubs", params)
         return result if result else []
 
+    async def import_ses(
+        self,
+        file_data: bytes,
+        filter_expr: str = "",
+        identity: str = "",
+        add_participants: bool = True,
+        update_participants: bool = True,
+        col_handling: int = 0,
+        no_history: bool = False,
+        lang: str = "",
+    ) -> ImportResult:
+        """Import participants from a SES file.
+
+        Based on go-webapi/eventapi_participants.go:ImportSES.
+
+        Args:
+            file_data: SES file content
+            filter_expr: Only update participants matching this filter
+            identity: Identity field for matching
+            add_participants: Add new participants
+            update_participants: Update existing participants
+            col_handling: Column handling mode
+            no_history: Skip history entries
+            lang: Language code
+
+        Returns:
+            Import result
+        """
+        params = {
+            "addParticipants": add_participants,
+            "updateParticipants": update_participants,
+            "colHandling": col_handling,
+            "noHistory": no_history,
+            "filter": filter_expr,
+            "identity": identity,
+            "lang": lang,
+        }
+        result = await self._client.post_json(
+            self._event_id,
+            "part/importses",
+            params,
+            file_data,
+        )
+        return ImportResult.model_validate(result)
+
     async def import_file(
         self,
         file_data: bytes,
