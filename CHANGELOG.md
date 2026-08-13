@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-08-13
+
+First release. The client covers the full go-webapi surface, and every
+endpoint path, query parameter and JSON field name has been verified against
+the Go reference implementation.
+
 ### Added
 
 - Full go-webapi endpoint coverage: 22 further endpoint modules (archives,
@@ -78,6 +84,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   that blocks PyPI uploads, and corrected the repository URLs.
 - README documents the datetime, field-list and identifier semantics above.
 
-## [0.1.0]
-
-- Initial release.
+[Unreleased]: https://github.com/Karlsruher-Lemminge/py-raceresult/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/Karlsruher-Lemminge/py-raceresult/releases/tag/v0.1.0
