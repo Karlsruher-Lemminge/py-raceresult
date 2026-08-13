@@ -71,7 +71,7 @@ class ContestsEndpoint:
         """
         params = {"id": id}
         result = await self._client.get_json(self._event_id, "contests/get", params)
-        return Contest.model_validate(result)
+        return Contest.model_validate(result if result else {})
 
     async def delete(self, id: int) -> None:
         """Delete a contest.
@@ -101,4 +101,4 @@ class ContestsEndpoint:
         result = await self._client.post_json(
             self._event_id, "contests/save", params, data
         )
-        return int(result)
+        return int(result) if result is not None else 0

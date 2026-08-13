@@ -33,7 +33,7 @@ class OverwriteValuesEndpoint:
             "filter": filter_expr,
         }
         resp = await self._client.get_json(self._event_id, "overwritevalues/count", params)
-        return int(resp)
+        return int(resp) if resp is not None else 0
 
     async def delete(
         self,

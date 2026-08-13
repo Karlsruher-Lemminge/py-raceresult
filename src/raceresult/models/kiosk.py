@@ -24,7 +24,6 @@ class KioskAfterSave(BaseModel):
     destination: str = Field(default="", alias="Destination")
     filter: str = Field(default="", alias="Filter")
     printer: str = Field(default="", alias="Printer")
-    flags: list[str] = Field(default_factory=list, alias="Flags")
 
     model_config = {"populate_by_name": True}
 

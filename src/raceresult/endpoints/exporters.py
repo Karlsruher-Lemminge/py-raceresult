@@ -101,7 +101,7 @@ class ExportersEndpoint:
             if len(result) == 0:
                 raise ValueError(f"Exporter with ID {id} not found")
             return Exporter.model_validate(result[0])
-        return Exporter.model_validate(result)
+        return Exporter.model_validate(result if result else {})
 
     async def delete(self, id: int) -> None:
         """Delete an exporter.

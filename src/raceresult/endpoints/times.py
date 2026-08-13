@@ -8,8 +8,8 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
-from raceresult.models.timing import Time, Passing
 from raceresult.endpoints.participants import Identifier
+from raceresult.models.timing import Passing, Time
 
 if TYPE_CHECKING:
     from raceresult.client import RaceResultClient
@@ -328,7 +328,7 @@ class TimesEndpoint:
         Returns:
             List of response items
         """
-        params = {
+        params: dict[str, Any] = {
             "contestFilter": contest_filter,
             "ignoreBibToBibAssign": ignore_bib_to_bib_assign,
         }

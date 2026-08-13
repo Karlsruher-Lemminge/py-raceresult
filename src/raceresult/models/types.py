@@ -8,7 +8,7 @@ Based on:
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime
 from decimal import Decimal as PyDecimal
 from typing import Annotated, Any, Optional
 
@@ -28,7 +28,7 @@ def _parse_rr_date(value: Any) -> date | None:
     if value is None or value == "":
         return None
     if isinstance(value, date):
-        if value == VB_ZERO_DATE or value == GO_ZERO_DATE:
+        if value in (VB_ZERO_DATE, GO_ZERO_DATE):
             return None
         return value
     if isinstance(value, str):
@@ -37,7 +37,7 @@ def _parse_rr_date(value: Any) -> date | None:
         # ISO format: YYYY-MM-DD
         try:
             parsed = date.fromisoformat(value)
-            if parsed == VB_ZERO_DATE or parsed == GO_ZERO_DATE:
+            if parsed in (VB_ZERO_DATE, GO_ZERO_DATE):
                 return None
             return parsed
         except ValueError:
@@ -76,38 +76,57 @@ Handles:
 """
 
 
+def _is_zero_datetime(value: datetime) -> bool:
+    """Whether a datetime is one of the zero values Go treats as empty.
+
+    Mirrors go-model/datetime/datetime.go:144-149 (IsZero), which covers
+    both the VB zero date 1899-12-30 and Go's own 0001-01-01 zero time.
+    """
+    return value.date() in (VB_ZERO_DATE, GO_ZERO_DATE) and (
+        value.hour,
+        value.minute,
+        value.second,
+    ) == (0, 0, 0)
+
+
 def _parse_rr_datetime(value: Any) -> datetime | None:
-    """Parse a Raceresult datetime value."""
+    """Parse a Raceresult datetime value.
+
+    Zoneless wire forms are returned as NAIVE datetimes on purpose. Go
+    tracks this with an explicit `hasZone` flag (datetime.go:104-118) and
+    re-emits such values without a zone, reinterpreting them in the event's
+    timezone later. Stamping UTC on them here would silently turn an
+    event-local time into a UTC instant on the next save.
+    """
     if value is None or value == "":
         return None
     if isinstance(value, datetime):
-        return value
+        return None if _is_zero_datetime(value) else value
     if isinstance(value, str):
         if not value:
             return None
-        # Try RFC3339 (with timezone)
+        parsed: datetime | None = None
+        # RFC3339 (carries a zone) -- go datetime.go:118-123
         if "T" in value:
             try:
-                return datetime.fromisoformat(value.replace("Z", "+00:00"))
+                parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
             except ValueError:
-                pass
-        # Try datetime format: YYYY-MM-DD HH:MM:SS
-        if " " in value and len(value) == 19:
+                parsed = None
+        # Zoneless datetime: YYYY-MM-DD HH:MM:SS -- go datetime.go:111-117
+        if parsed is None and " " in value and len(value) == 19:
             try:
-                return datetime.strptime(value, "%Y-%m-%d %H:%M:%S").replace(
-                    tzinfo=timezone.utc
-                )
+                parsed = datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
             except ValueError:
-                pass
-        # Try date-only format: YYYY-MM-DD
-        if len(value) == 10:
+                parsed = None
+        # Zoneless date only: YYYY-MM-DD -- go datetime.go:105-110
+        if parsed is None and len(value) == 10:
             try:
                 d = date.fromisoformat(value)
-                return datetime(d.year, d.month, d.day, tzinfo=timezone.utc)
+                parsed = datetime(d.year, d.month, d.day)
             except ValueError:
-                pass
-        # European datetime: DD.MM.YYYY HH:MM:SS
-        if "." in value:
+                parsed = None
+        # European datetime: DD.MM.YYYY [HH:MM:SS]
+        if parsed is None and "." in value:
             parts = value.split(" ")
             date_parts = parts[0].split(".")
             if len(date_parts) == 3:
@@ -115,39 +134,40 @@ def _parse_rr_datetime(value: Any) -> datetime | None:
                     d = date(int(date_parts[2]), int(date_parts[1]), int(date_parts[0]))
                     if len(parts) > 1:
                         time_parts = parts[1].split(":")
-                        return datetime(
+                        parsed = datetime(
                             d.year,
                             d.month,
                             d.day,
                             int(time_parts[0]),
                             int(time_parts[1]) if len(time_parts) > 1 else 0,
                             int(time_parts[2]) if len(time_parts) > 2 else 0,
-                            tzinfo=timezone.utc,
                         )
-                    return datetime(d.year, d.month, d.day, tzinfo=timezone.utc)
+                    else:
+                        parsed = datetime(d.year, d.month, d.day)
                 except (ValueError, IndexError):
-                    pass
+                    parsed = None
+        if parsed is not None and _is_zero_datetime(parsed):
+            return None
+        return parsed
     return None
 
 
 def _serialize_rr_datetime(value: datetime | None) -> str:
-    """Serialize a datetime to Raceresult format."""
-    if value is None:
+    """Serialize a datetime to Raceresult format.
+
+    Mirrors go-model/datetime/datetime.go:152-166 (ToString). The server
+    parses datetimes with a strict length switch (datetime.go:104-131) and
+    rejects anything else with "date time format not supported", so
+    sub-second precision must be dropped -- Go's time.RFC3339 layout has no
+    fractional part, and datetime.now() would otherwise be unsendable.
+    """
+    if value is None or _is_zero_datetime(value):
         return ""
-    # Check if it's VB zero date
-    if (
-        value.year == 1899
-        and value.month == 12
-        and value.day == 30
-        and value.hour == 0
-        and value.minute == 0
-        and value.second == 0
-    ):
-        return ""
-    # Use RFC3339 format if timezone is set
+    value = value.replace(microsecond=0)
+    # Zoned values go out as RFC3339 -- go datetime.go:157-159
     if value.tzinfo is not None:
         return value.isoformat()
-    # Use simple format without timezone
+    # Zoneless midnight collapses to a bare date -- go datetime.go:160-162
     if value.hour == 0 and value.minute == 0 and value.second == 0:
         return value.strftime("%Y-%m-%d")
     return value.strftime("%Y-%m-%d %H:%M:%S")
@@ -162,10 +182,14 @@ RRDateTime = Annotated[
 """Raceresult DateTime type - compatible with Go's datetime.DateTime.
 
 Handles:
-- RFC3339 format with timezone
-- YYYY-MM-DD HH:MM:SS format (assumed UTC)
-- Date-only format
-- European formats
+- RFC3339 format with timezone -> aware datetime
+- YYYY-MM-DD HH:MM:SS format -> NAIVE datetime (Go's hasZone=false)
+- Date-only format -> naive datetime at midnight
+- European formats -> naive datetime
+- VB zero date (1899-12-30) and Go zero date (0001-01-01) as None
+
+Zoneless values stay naive so they round-trip unchanged; use
+:func:`align_timezone` before comparing one against an aware datetime.
 """
 
 
@@ -225,3 +249,19 @@ def decimal_to_duration_seconds(value: PyDecimal) -> float:
 def duration_seconds_to_decimal(seconds: float) -> PyDecimal:
     """Convert seconds to a Raceresult decimal time."""
     return PyDecimal(str(round(seconds, DECIMAL_PLACES)))
+
+
+def align_timezone(value: datetime, reference: datetime) -> datetime:
+    """Make ``value`` comparable to ``reference`` the way Go does.
+
+    Raceresult datetimes may or may not carry a timezone (see
+    :func:`_parse_rr_datetime`), so a naive value and an aware one can meet
+    in a comparison. Go resolves that by reading the zoneless side in the
+    other side's location (go-model/datetime/datetime.go:29-41, Before),
+    rather than raising as Python would.
+    """
+    if (value.tzinfo is None) == (reference.tzinfo is None):
+        return value
+    if value.tzinfo is None:
+        return value.replace(tzinfo=reference.tzinfo)
+    return value.astimezone(reference.tzinfo) if reference.tzinfo else value.replace(tzinfo=None)

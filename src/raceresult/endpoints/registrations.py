@@ -60,7 +60,7 @@ class RegistrationsEndpoint:
         """
         params = {"name": name}
         result = await self._client.get_json(self._event_id, "registrations/get", params)
-        return Registration.model_validate(result)
+        return Registration.model_validate(result if result else {})
 
     async def save(self, registration: Registration) -> None:
         """Save a registration form.

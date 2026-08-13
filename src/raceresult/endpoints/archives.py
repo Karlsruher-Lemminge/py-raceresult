@@ -21,7 +21,7 @@ class ArchivesEndpoint:
     async def create_new_reg_no(self) -> int:
         """Create a new registration number."""
         result = await self._client.get_json(self._event_id, "archives/createnewregno")
-        return int(result)
+        return int(result) if result is not None else 0
 
     async def get_matches(self, prefix: str, max_number: int = 10) -> list[ArchivesMatch]:
         """Return matching archive entries for the given name prefix."""

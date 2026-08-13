@@ -3,25 +3,38 @@
 from datetime import date, datetime, timezone
 from decimal import Decimal
 
-import pytest
-
-from raceresult.models.types import RRDate, RRDateTime, RRDecimal
-from raceresult.models.event import (
-    Contest, AgeGroup, CustomField, CustomFieldType,
-    ChatMessage, ForwardingInfo, GroupTimes, GroupTime,
-    RawDataRule, SimpleAPIItem, TeamScore, WebHook, WebHookType, Version,
-)
-from raceresult.models.participant import Participant
-from raceresult.models.registration import Registration, Step, Element, FormField
-from raceresult.models.payment import Voucher, VoucherType
-from raceresult.models.email import EmailTemplate, TemplateType
-from raceresult.models.timing import ChipFileEntry, TimingPoint
-from raceresult.models.kiosk import Kiosk, KioskAfterSave, KioskStep, KioskDisplayField, KioskEditField, KioskSearchField
-from raceresult.models.archives import ArchivesMatch, ArchivesParticipant, ParticipationExt
-from raceresult.endpoints.certificates import Certificate, Element as CertificateElement, Zone as CertificateZone, ElementType
+from raceresult.endpoints.certificates import Certificate, ElementType
+from raceresult.endpoints.certificates import Element as CertificateElement
+from raceresult.endpoints.certificates import Zone as CertificateZone
 from raceresult.endpoints.certificatesets import CertificateSet, CertificateSetType
-from raceresult.models.statistic import Statistics, Aggregation
-from raceresult.models.label import Label, LabelDirection, LabelBarcodeType
+from raceresult.models.archives import ArchivesMatch, ArchivesParticipant, ParticipationExt
+from raceresult.models.email import EmailTemplate, TemplateType
+from raceresult.models.event import (
+    ChatMessage,
+    Contest,
+    ForwardingInfo,
+    GroupTime,
+    GroupTimes,
+    RawDataRule,
+    SimpleAPIItem,
+    TeamScore,
+    Version,
+    WebHook,
+    WebHookType,
+)
+from raceresult.models.kiosk import (
+    Kiosk,
+    KioskAfterSave,
+    KioskDisplayField,
+    KioskEditField,
+    KioskStep,
+)
+from raceresult.models.label import Label, LabelBarcodeType, LabelDirection
+from raceresult.models.participant import Participant
+from raceresult.models.payment import Voucher, VoucherType
+from raceresult.models.registration import Registration
+from raceresult.models.statistic import Aggregation, Statistics
+from raceresult.models.timing import ChipFileEntry
 
 
 class TestRRDate:
@@ -150,7 +163,7 @@ class TestRegistration:
 
     def test_is_active_enabled(self):
         """Test is_active when enabled."""
-        now = datetime.now(timezone.utc)
+        datetime.now(timezone.utc)
         reg = Registration(
             name="Test",
             enabled=True,

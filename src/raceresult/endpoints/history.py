@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
-from raceresult.models.types import RRDateTime
 from raceresult.endpoints.participants import Identifier
+from raceresult.models.types import RRDateTime
 
 if TYPE_CHECKING:
     from raceresult.client import RaceResultClient
@@ -125,9 +125,11 @@ class HistoryEndpoint:
             "filter": filter_expr,
         }
         if date_from is not None:
-            params["dateFrom"] = date_from.isoformat()
+            # go-webapi/eventapi_history.go:54,68 spells this "dateForm" (a typo
+            # upstream, but it is what the server is fed by the reference client)
+            params["dateForm"] = date_from
         if date_to is not None:
-            params["dateTo"] = date_to.isoformat()
+            params["dateTo"] = date_to
         await self._client.get(self._event_id, "history/delete", params)
 
     async def count(
@@ -161,8 +163,10 @@ class HistoryEndpoint:
             "filter": filter_expr,
         }
         if date_from is not None:
-            params["dateFrom"] = date_from.isoformat()
+            # go-webapi/eventapi_history.go:54,68 spells this "dateForm" (a typo
+            # upstream, but it is what the server is fed by the reference client)
+            params["dateForm"] = date_from
         if date_to is not None:
-            params["dateTo"] = date_to.isoformat()
+            params["dateTo"] = date_to
         result = await self._client.get_json(self._event_id, "history/count", params)
         return int(result) if result is not None else 0

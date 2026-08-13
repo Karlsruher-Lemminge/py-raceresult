@@ -27,7 +27,7 @@ class SplitsEndpoint:
     async def get_one(self, id: int) -> Split:
         """Return the split with the given ID."""
         result = await self._client.get_json(self._event_id, "splits/get", {"id": id})
-        return Split.model_validate(result)
+        return Split.model_validate(result if result else {})
 
     async def delete(self, ids: list[int]) -> None:
         """Delete splits by ID."""

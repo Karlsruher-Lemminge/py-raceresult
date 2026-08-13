@@ -5,21 +5,21 @@ Based on go-model/registration/registration.go.
 
 from __future__ import annotations
 
-from typing import Any, Annotated, TypeVar
+from typing import Annotated, Any, TypeVar
 
-from pydantic import BaseModel, Field as PydanticField, BeforeValidator, model_validator
+from pydantic import BaseModel, BeforeValidator, model_validator
+from pydantic import Field as PydanticField
 
 from raceresult.models.types import RRDateTime
-
 
 T = TypeVar("T")
 
 
-def _null_to_list(v: Any) -> list:
+def _null_to_list(v: Any) -> list[Any]:
     """Convert None to empty list."""
     if v is None:
         return []
-    return v
+    return list(v)
 
 
 # Helper type for list fields that may come as null from API
@@ -272,11 +272,10 @@ class Registration(NullSafeModel):
 
         from datetime import datetime, timezone
 
+        from raceresult.models.types import align_timezone
+
         now = datetime.now(timezone.utc)
 
-        if self.enabled_from and now < self.enabled_from:
+        if self.enabled_from and now < align_timezone(self.enabled_from, now):
             return False
-        if self.enabled_to and now > self.enabled_to:
-            return False
-
-        return True
+        return not (self.enabled_to and now > align_timezone(self.enabled_to, now))

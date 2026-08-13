@@ -1,6 +1,6 @@
 """Python API client for Raceresult."""
 
-from raceresult.api import RaceResultAPI, EventAPI
+from raceresult.api import EventAPI, RaceResultAPI
 from raceresult.client import RaceResultClient, RaceResultError
 from raceresult.models.types import RRDate, RRDateTime, RRDecimal
 

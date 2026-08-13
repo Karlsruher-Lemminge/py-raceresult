@@ -5,9 +5,7 @@ Based on go-model/model.go and go-webapi/api_public.go.
 
 from __future__ import annotations
 
-from typing import Any
-
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class UserInfo(BaseModel):
@@ -35,6 +33,12 @@ class UserRight(BaseModel):
     rights: dict[str, list[str]] = Field(default_factory=dict, alias="Rights")
 
     model_config = {"populate_by_name": True}
+
+    @field_validator("rights", mode="before")
+    @classmethod
+    def _none_to_dict(cls, v: object) -> object:
+        # Go's UserRights is a map (model.go:672); a nil map marshals to null.
+        return v if v is not None else {}
 
     def has_right(self, right: str) -> bool:
         """Check if user has specific right.

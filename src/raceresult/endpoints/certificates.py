@@ -34,6 +34,20 @@ class PageSize(str, Enum):
     LEGAL = "Legal"
     USER_DEFINED = "UserDefined"
 
+    @classmethod
+    def _missing_(cls, value: object) -> PageSize:
+        """Match case-insensitively, falling back to UserDefined.
+
+        go-model/certificate/pagesize.go:47-68 upper-cases the input and
+        has `default: *q = PSUserDefined`, so it never fails to parse.
+        """
+        if isinstance(value, str):
+            folded = value.strip().upper()
+            for member in cls:
+                if member.value.upper() == folded:
+                    return member
+        return cls.USER_DEFINED
+
 
 class PageFormat(str, Enum):
     """Certificate page orientation.
@@ -44,6 +58,21 @@ class PageFormat(str, Enum):
 
     PORTRAIT = "Portrait"
     LANDSCAPE = "Landscape"
+
+    @classmethod
+    def _missing_(cls, value: object) -> PageFormat:
+        """Match case-insensitively, falling back to Portrait.
+
+        go-model/certificate/pageformat.go:38-45 lower-cases the input and
+        leaves the zero value (PFPortrait) for anything unrecognised,
+        including the empty string.
+        """
+        if isinstance(value, str):
+            folded = value.strip().lower()
+            for member in cls:
+                if member.value.lower() == folded:
+                    return member
+        return cls.PORTRAIT
 
 
 class ElementType(IntEnum):

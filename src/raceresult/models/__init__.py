@@ -1,6 +1,6 @@
 """Raceresult data models."""
 
-from raceresult.models.types import RRDate, RRDateTime, RRDecimal
+from raceresult.models.email import EmailTemplate, HTTPHeader, Preview, TemplateType
 from raceresult.models.event import (
     AgeGroup,
     BibRange,
@@ -14,47 +14,50 @@ from raceresult.models.event import (
     Split,
     UserDefinedField,
 )
-from raceresult.models.participant import Participant, ParticipantNewResponse
-from raceresult.models.registration import (
-    Registration,
-    Step,
-    Element,
-    FormField,
-    Style,
-    Value,
-    AdditionalValue,
-    Confirmation,
-    AfterSave,
-    PaymentMethod as RegPaymentMethod,
-    ValidationRule,
-    ErrorMessages,
-)
-from raceresult.models.payment import (
-    Voucher,
-    VoucherType,
-    MethodOption,
-    PaymentConstants,
-)
-from raceresult.models.email import EmailTemplate, TemplateType, HTTPHeader, Preview
-from raceresult.models.timing import (
-    TimingPoint,
-    TimingPointRule,
-    ChipFileEntry,
-    RawData,
-    RawDataReduced,
-    Time,
-    Passing,
-    PassingToProcess,
-)
 from raceresult.models.kiosk import (
     Kiosk,
     KioskAfterSave,
-    KioskStep,
     KioskDisplayField,
     KioskEditField,
     KioskSearchField,
+    KioskStep,
 )
-from raceresult.models.public import UserInfo, UserRight, OAuthToken
+from raceresult.models.participant import Participant, ParticipantNewResponse
+from raceresult.models.payment import (
+    MethodOption,
+    PaymentConstants,
+    Voucher,
+    VoucherType,
+)
+from raceresult.models.public import OAuthToken, UserInfo, UserRight
+from raceresult.models.registration import (
+    AdditionalValue,
+    AfterSave,
+    Confirmation,
+    Element,
+    ErrorMessages,
+    FormField,
+    Registration,
+    Step,
+    Style,
+    ValidationRule,
+    Value,
+)
+from raceresult.models.registration import (
+    PaymentMethod as RegPaymentMethod,
+)
+from raceresult.models.timing import (
+    ChipFileEntry,
+    Passing,
+    PassingPosition,
+    PassingToProcess,
+    RawData,
+    RawDataReduced,
+    Time,
+    TimingPoint,
+    TimingPointRule,
+)
+from raceresult.models.types import RRDate, RRDateTime, RRDecimal
 
 __all__ = [
     # Types
@@ -107,6 +110,7 @@ __all__ = [
     "RawDataReduced",
     "Time",
     "Passing",
+    "PassingPosition",
     "PassingToProcess",
     # Kiosk
     "Kiosk",

@@ -5,6 +5,7 @@ Based on go-webapi/api.go and go-webapi/eventapi.go.
 
 from __future__ import annotations
 
+import contextlib
 from datetime import datetime
 from typing import Any
 
@@ -48,12 +49,12 @@ from raceresult.endpoints.synchronization import SynchronizationEndpoint
 from raceresult.endpoints.team_scores import TeamScoresEndpoint
 from raceresult.endpoints.times import TimesEndpoint
 from raceresult.endpoints.timing import ChipFileEndpoint
-from raceresult.endpoints.timingpoints import TimingPointsEndpoint
 from raceresult.endpoints.timingpointrules import TimingPointRulesEndpoint
+from raceresult.endpoints.timingpoints import TimingPointsEndpoint
 from raceresult.endpoints.user_defined_fields import UserDefinedFieldsEndpoint
 from raceresult.endpoints.vouchers import VouchersEndpoint
 from raceresult.endpoints.webhooks import WebHooksEndpoint
-from raceresult.models.public import UserInfo, UserRight, OAuthToken
+from raceresult.models.public import OAuthToken, UserInfo, UserRight
 
 
 class EventListItem:
@@ -581,19 +582,15 @@ class RaceResultAPI:
             event_date = None
             event_date2 = None
             if item.get("EventDate"):
-                try:
+                with contextlib.suppress(ValueError, TypeError):
                     event_date = datetime.fromisoformat(
                         item["EventDate"].replace("Z", "+00:00")
                     )
-                except (ValueError, TypeError):
-                    pass
             if item.get("EventDate2"):
-                try:
+                with contextlib.suppress(ValueError, TypeError):
                     event_date2 = datetime.fromisoformat(
                         item["EventDate2"].replace("Z", "+00:00")
                     )
-                except (ValueError, TypeError):
-                    pass
 
             events.append(
                 EventListItem(

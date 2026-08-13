@@ -101,16 +101,15 @@ class Voucher(BaseModel):
         """Check if voucher is currently valid based on date range and usage."""
         from datetime import datetime, timezone
 
+        from raceresult.models.types import align_timezone
+
         now = datetime.now(timezone.utc)
 
-        if self.valid_from and now < self.valid_from:
+        if self.valid_from and now < align_timezone(self.valid_from, now):
             return False
-        if self.valid_until and now > self.valid_until:
+        if self.valid_until and now > align_timezone(self.valid_until, now):
             return False
-        if self.reusable > 0 and self.use_counter >= self.reusable:
-            return False
-
-        return True
+        return not (self.reusable > 0 and self.use_counter >= self.reusable)
 
 
 # EntryFee is defined in event.py - re-export for backwards compatibility

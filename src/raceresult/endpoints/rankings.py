@@ -25,7 +25,7 @@ class RankingsEndpoint:
     async def get_one(self, id: int) -> Ranking:
         """Return the ranking with the given ID."""
         result = await self._client.get_json(self._event_id, "ranks/get", {"id": id})
-        return Ranking.model_validate(result)
+        return Ranking.model_validate(result if result else {})
 
     async def delete(self, id: int) -> None:
         """Delete a ranking."""

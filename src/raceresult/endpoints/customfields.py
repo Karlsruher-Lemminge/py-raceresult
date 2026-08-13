@@ -61,7 +61,7 @@ class CustomFieldsEndpoint:
         """
         params = {"id": id}
         result = await self._client.get_json(self._event_id, "fields/get", params)
-        return CustomField.model_validate(result)
+        return CustomField.model_validate(result if result else {})
 
     async def delete(self, id: int) -> None:
         """Delete a custom field.

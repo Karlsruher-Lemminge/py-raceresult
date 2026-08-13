@@ -60,7 +60,7 @@ class EmailTemplatesEndpoint:
         """
         params = {"name": name}
         result = await self._client.get_json(self._event_id, "emailtemplates/get", params)
-        return EmailTemplate.model_validate(result)
+        return EmailTemplate.model_validate(result if result else {})
 
     async def save(self, template: EmailTemplate) -> None:
         """Save an email template.

@@ -5,6 +5,9 @@ Based on go-webapi/api.go and go-webapi/api_public.go.
 
 from __future__ import annotations
 
+import json
+from datetime import date, datetime
+from decimal import Decimal
 from typing import Any
 from urllib.parse import urlencode
 
@@ -112,10 +115,28 @@ class RaceResultClient:
         return url
 
     def _serialize_param(self, value: Any) -> str:
-        """Serialize a parameter value to string."""
+        """Serialize a parameter value to string.
+
+        Based on go-webapi/urlvalues.go:19-49. Note the asymmetry there:
+        []string is JSON-encoded (urlvalues.go:42-44), while int slices
+        never reach urlValues at all -- the Go call sites pre-join them
+        with intSliceToString (helpers.go:25-34). Comma-joining a string
+        list would corrupt any field expression containing a comma.
+        """
         if isinstance(value, bool):
             return "true" if value else "false"
+        if isinstance(value, datetime):
+            # Go renders a time.Time param as RFC3339 (urlvalues.go:27-28).
+            # Endpoints typed datetime.DateTime in Go want ToString() instead
+            # and pass an already-formatted string.
+            return value.replace(microsecond=0).isoformat()
+        if isinstance(value, date):
+            return value.isoformat()
+        if isinstance(value, Decimal):
+            return format(value.normalize(), "f")
         if isinstance(value, (list, tuple)):
+            if all(isinstance(v, str) for v in value):
+                return json.dumps(list(value), separators=(",", ":"))
             return ",".join(str(v) for v in value)
         return str(value)
 
@@ -232,7 +253,7 @@ class RaceResultClient:
         cmd: str,
         params: dict[str, Any] | None = None,
         data: Any = None,
-        content_type: str = "application/json",
+        content_type: str = "",
     ) -> bytes:
         """Make a POST request to the API.
 
@@ -256,22 +277,20 @@ class RaceResultClient:
         headers = self._get_headers()
 
         if data is not None:
-            if isinstance(data, (dict, list)):
-                import json
-
-                body = json.dumps(data).encode("utf-8")
-                headers["Content-Type"] = "application/json"
-            elif isinstance(data, str):
+            if isinstance(data, str):
                 body = data.encode("utf-8")
-                headers["Content-Type"] = content_type
             elif isinstance(data, bytes):
                 body = data
-                headers["Content-Type"] = content_type
             else:
-                import json
-
                 body = json.dumps(data).encode("utf-8")
                 headers["Content-Type"] = "application/json"
+            # Raw str/bytes bodies carry no Content-Type unless the caller
+            # asks for one -- go-webapi/eventapi.go:269 passes an empty
+            # contentType and go-webapi/api.go:110 only sets the header
+            # when it is non-empty. Labelling an upload as JSON can make a
+            # strict server reject or mis-parse it.
+            if content_type and "Content-Type" not in headers:
+                headers["Content-Type"] = content_type
         else:
             body = None
 
@@ -282,8 +301,6 @@ class RaceResultClient:
         self, event_id: str | None, cmd: str, params: dict[str, Any] | None = None
     ) -> Any:
         """Make a GET request and parse JSON response."""
-        import json
-
         content = await self.get(event_id, cmd, params)
         return json.loads(content)
 
@@ -295,8 +312,6 @@ class RaceResultClient:
         data: Any = None,
     ) -> Any:
         """Make a POST request and parse JSON response."""
-        import json
-
         content = await self.post(event_id, cmd, params, data)
         if content:
             return json.loads(content)

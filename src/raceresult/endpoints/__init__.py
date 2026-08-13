@@ -24,7 +24,7 @@ from raceresult.endpoints.kiosks import KiosksEndpoint
 from raceresult.endpoints.labels import LabelsEndpoint
 from raceresult.endpoints.lists import ListsEndpoint
 from raceresult.endpoints.overwrite_values import OverwriteValuesEndpoint
-from raceresult.endpoints.participants import ParticipantsEndpoint, Identifier
+from raceresult.endpoints.participants import Identifier, ParticipantsEndpoint
 from raceresult.endpoints.pictures import PicturesEndpoint
 from raceresult.endpoints.rankings import RankingsEndpoint
 from raceresult.endpoints.rawdata import RawDataEndpoint
@@ -39,8 +39,8 @@ from raceresult.endpoints.synchronization import SynchronizationEndpoint
 from raceresult.endpoints.team_scores import TeamScoresEndpoint
 from raceresult.endpoints.times import TimesEndpoint
 from raceresult.endpoints.timing import ChipFileEndpoint
-from raceresult.endpoints.timingpoints import TimingPointsEndpoint
 from raceresult.endpoints.timingpointrules import TimingPointRulesEndpoint
+from raceresult.endpoints.timingpoints import TimingPointsEndpoint
 from raceresult.endpoints.user_defined_fields import UserDefinedFieldsEndpoint
 from raceresult.endpoints.vouchers import VouchersEndpoint
 from raceresult.endpoints.webhooks import WebHooksEndpoint

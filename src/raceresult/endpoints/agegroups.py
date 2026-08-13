@@ -8,8 +8,9 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from raceresult.models.event import AgeGroup
 from raceresult.endpoints.participants import Identifier
+from raceresult.models.event import AgeGroup
+from raceresult.models.types import _serialize_rr_datetime
 
 if TYPE_CHECKING:
     from raceresult.client import RaceResultClient
@@ -144,7 +145,10 @@ class AgeGroupsEndpoint:
             "lang": lang,
         }
         if date is not None:
-            params["date"] = date.isoformat()
+            # Go types this param datetime.DateTime, so it goes out via
+            # ToString() -- "2026-06-19" or "2026-06-19 15:04:05", never
+            # RFC3339 (go-webapi/eventapi_agegroups.go:66,73).
+            params["date"] = _serialize_rr_datetime(date)
         result = await self._client.get_json(self._event_id, "agegroups/generate", params)
         if not result:
             return []

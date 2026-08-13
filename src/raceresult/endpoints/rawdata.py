@@ -11,9 +11,9 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, field_validator
 
+from raceresult.endpoints.participants import Identifier
 from raceresult.models.timing import RawData
 from raceresult.models.types import RRDecimal
-from raceresult.endpoints.participants import Identifier
 
 if TYPE_CHECKING:
     from raceresult.client import RaceResultClient
@@ -38,6 +38,7 @@ class RawDataFilter(BaseModel):
     order_id: list[int] | None = Field(default=None, alias="OrderID")
     hits: list[int] | None = Field(default=None, alias="Hits")
     rssi: list[int] | None = Field(default=None, alias="RSSI")
+    battery: list[RRDecimal] | None = Field(default=None, alias="Battery")
     loop_id: list[int] | None = Field(default=None, alias="LoopID")
     channel: list[int] | None = Field(default=None, alias="Channel")
     port: list[int] | None = Field(default=None, alias="Port")
@@ -77,7 +78,7 @@ class RawDataDistinctValues(BaseModel):
 
     @field_validator("decoder_id", "order_id", "battery_voltage", "hits", "rssi", mode="before")
     @classmethod
-    def none_to_empty_list(cls, v):
+    def none_to_empty_list(cls, v: object) -> object:
         """Convert None to empty list."""
         return v if v is not None else []
 

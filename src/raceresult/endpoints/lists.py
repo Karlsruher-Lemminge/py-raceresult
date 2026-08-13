@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
-from raceresult.models.types import RRDecimal, RRDateTime
+from raceresult.models.types import RRDateTime, RRDecimal
 
 if TYPE_CHECKING:
     from raceresult.client import RaceResultClient

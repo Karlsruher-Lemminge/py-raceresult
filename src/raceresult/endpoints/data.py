@@ -5,6 +5,10 @@ Based on go-webapi/eventapi_data.go.
 
 from __future__ import annotations
 
+# `builtins` is imported because DataEndpoint.list shadows the builtin
+# `list` inside the class body, breaking bare list[...] annotations.
+import builtins
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -59,7 +63,7 @@ class DataEndpoint:
         groups: list[str] | None = None,
         multiplier_field: str = "",
         selector_result: str = "",
-    ) -> list[list[Any]]:
+    ) -> builtins.list[builtins.list[Any]]:
         """Get arbitrary records.
 
         Based on go-webapi/eventapi_data.go:38-73.
@@ -78,7 +82,7 @@ class DataEndpoint:
             List of rows, each row is a list of field values
         """
         params: dict[str, Any] = {
-            "fields": ",".join(fields),
+            "fields": fields,
             "filter": filter_expr,
             "limitFrom": limit_from,
             "limitTo": limit_to,
@@ -87,9 +91,9 @@ class DataEndpoint:
             "listFormat": "JSON",
         }
         if sort:
-            params["sort"] = ",".join(sort)
+            params["sort"] = sort
         if groups:
-            params["groups"] = ",".join(groups)
+            params["groups"] = groups
 
         result = await self._client.get_json(self._event_id, "data/list", params)
         return result if result else []
@@ -97,12 +101,12 @@ class DataEndpoint:
     async def transformation(
         self,
         col_field: str,
-        row_fields: list[str],
+        row_fields: Sequence[str],
         filter_expr: str = "",
         field: str = "",
         mode: int = 0,
         sort_by_value: bool = False,
-    ) -> list[list[Any]]:
+    ) -> builtins.list[builtins.list[Any]]:
         """Create min/max/sum/count/avg statistics.
 
         Based on go-webapi/eventapi_data.go:76-108.
@@ -120,7 +124,7 @@ class DataEndpoint:
         """
         params: dict[str, Any] = {
             "colField": col_field,
-            "rowFields": ",".join(row_fields),
+            "rowFields": row_fields,
             "filter": filter_expr,
             "field": field,
             "mode": mode,

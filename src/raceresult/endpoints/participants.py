@@ -7,12 +7,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from raceresult.models.event import EntryFeeItem
 from raceresult.models.participant import (
     ImportResult,
     ParticipantNewResponse,
     SaveValueArrayItem,
 )
-from raceresult.models.event import EntryFeeItem
 
 if TYPE_CHECKING:
     from raceresult.client import RaceResultClient
@@ -37,8 +37,37 @@ class Identifier:
 
     @classmethod
     def by_filter(cls, filter_expr: str) -> Identifier:
-        """Identify by filter expression."""
+        """Identify by filter expression.
+
+        Note: this has no equivalent in go-webapi, whose Identifier.Value is
+        an int and only supports bib/pid (go-webapi/identifier.go). It maps
+        onto the same ``filter`` query parameter that several endpoints also
+        expose as their own argument, so the two cannot both be set -- see
+        :func:`apply_identifier`.
+        """
         return cls("filter", filter_expr)
+
+
+def apply_identifier(
+    params: dict[str, Any], identifier: Identifier | None
+) -> dict[str, Any]:
+    """Splice an identifier into a parameter dict.
+
+    Raises if the identifier would silently overwrite a parameter the caller
+    already set. That only happens with :meth:`Identifier.by_filter`, where
+    the old behaviour was to drop the caller's own filter expression and
+    target a different -- potentially much larger -- set of participants.
+    """
+    if identifier is None:
+        return params
+    existing = params.get(identifier.name)
+    if existing not in (None, "", 0) and existing != identifier.value:
+        raise ValueError(
+            f"identifier {identifier.name}={identifier.value!r} conflicts with "
+            f"{identifier.name}={existing!r} passed separately; pass only one"
+        )
+    params[identifier.name] = identifier.value
+    return params
 
 
 class ParticipantsEndpoint:
@@ -79,7 +108,7 @@ class ParticipantsEndpoint:
         """
         params = {
             identifier.name: identifier.value,
-            "fields": ",".join(fields),
+            "fields": fields,
         }
         result = await self._client.get_json(self._event_id, "part/getfields", params)
         return result if result else {}
@@ -104,7 +133,7 @@ class ParticipantsEndpoint:
         """
         params = {
             identifier.name: identifier.value,
-            "fields": ",".join(fields),
+            "fields": fields,
         }
         result = await self._client.post_json(
             self._event_id, "part/getfieldswithchanges", params, changes
@@ -205,8 +234,7 @@ class ParticipantsEndpoint:
             "filter": filter_expr,
             "contest": contest,
         }
-        if identifier:
-            params[identifier.name] = identifier.value
+        apply_identifier(params, identifier)
         await self._client.get(self._event_id, "part/delete", params)
 
     async def new(
@@ -234,7 +262,7 @@ class ParticipantsEndpoint:
             "v2": True,
         }
         result = await self._client.get_json(self._event_id, "part/new", params)
-        return ParticipantNewResponse.model_validate(result)
+        return ParticipantNewResponse.model_validate(result if result else {})
 
     async def entry_fee(self, bibs: list[int]) -> list[EntryFeeItem]:
         """Get entry fees for participants.
@@ -356,8 +384,7 @@ class ParticipantsEndpoint:
             "contest": contest,
             "filter": filter_expr,
         }
-        if identifier:
-            params[identifier.name] = identifier.value
+        apply_identifier(params, identifier)
         await self._client.get(self._event_id, "part/clearbankinformation", params)
 
     async def free_bib(
@@ -384,7 +411,7 @@ class ParticipantsEndpoint:
             "preferred": preferred,
         }
         result = await self._client.get_json(self._event_id, "part/freebib", params)
-        return int(result)
+        return int(result) if result is not None else 0
 
     async def frequent_clubs(self, wildcard: str, max_number: int = 10) -> list[str]:
         """Get frequent club names.
@@ -412,13 +439,15 @@ class ParticipantsEndpoint:
         identity: str = "",
         add_participants: bool = True,
         update_participants: bool = True,
-        col_handling: int = 0,
-        no_history: bool = False,
-        lang: str = "",
+        contest_from: int = 0,
+        contest_to: int = 0,
+        times_from: int = 0,
+        times_to: int = 0,
+        import_raw_data: bool = False,
     ) -> ImportResult:
         """Import participants from a SES file.
 
-        Based on go-webapi/eventapi_participants.go:ImportSES.
+        Based on go-webapi/eventapi_participants.go:199-221.
 
         Args:
             file_data: SES file content
@@ -426,21 +455,25 @@ class ParticipantsEndpoint:
             identity: Identity field for matching
             add_participants: Add new participants
             update_participants: Update existing participants
-            col_handling: Column handling mode
-            no_history: Skip history entries
-            lang: Language code
+            contest_from: Source contest ID to map from (0 = all)
+            contest_to: Target contest ID to map to (0 = keep)
+            times_from: Source result ID for times (0 = none)
+            times_to: Target result ID for times (0 = none)
+            import_raw_data: Also import raw timing data
 
         Returns:
             Import result
         """
         params = {
-            "addParticipants": add_participants,
-            "updateParticipants": update_participants,
-            "colHandling": col_handling,
-            "noHistory": no_history,
             "filter": filter_expr,
             "identity": identity,
-            "lang": lang,
+            "addParticipants": add_participants,
+            "updateParticipants": update_participants,
+            "contestFrom": contest_from,
+            "contestTo": contest_to,
+            "timesFrom": times_from,
+            "timesTo": times_to,
+            "importRawData": import_raw_data,
         }
         result = await self._client.post_json(
             self._event_id,
@@ -448,7 +481,7 @@ class ParticipantsEndpoint:
             params,
             file_data,
         )
-        return ImportResult.model_validate(result)
+        return ImportResult.model_validate(result if result else {})
 
     async def import_file(
         self,
@@ -487,4 +520,4 @@ class ParticipantsEndpoint:
             params,
             file_data,
         )
-        return ImportResult.model_validate(result)
+        return ImportResult.model_validate(result if result else {})

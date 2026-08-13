@@ -6,8 +6,9 @@ Based on go-model/model.go:115-168.
 from __future__ import annotations
 
 from decimal import Decimal
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from raceresult.models.types import RRDate, RRDateTime, RRDecimal
 
@@ -121,6 +122,11 @@ class ImportResult(BaseModel):
 
     model_config = {"populate_by_name": True}
 
+    @field_validator("pids", mode="before")
+    @classmethod
+    def _none_to_list(cls, v: object) -> object:
+        return v if v is not None else []
+
 
 class SaveValueArrayItem(BaseModel):
     """Item for saving multiple values at once.
@@ -131,6 +137,6 @@ class SaveValueArrayItem(BaseModel):
     bib: int = Field(default=0, alias="Bib")
     pid: int = Field(default=0, alias="PID")
     field_name: str = Field(default="", alias="FieldName")
-    value: str | int | float | bool | None = Field(default=None, alias="Value")
+    value: Any = Field(default=None, alias="Value")
 
     model_config = {"populate_by_name": True}

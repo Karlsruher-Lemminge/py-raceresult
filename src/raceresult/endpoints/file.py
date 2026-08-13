@@ -23,14 +23,14 @@ class FileEndpoint:
         """Activate participants and return the number of records activated."""
         params = {"bib": bib, "filter": filter_expr, "maxActivations": max_activations}
         result = await self._client.get_json(self._event_id, "file/activate", params)
-        return int(result)
+        return int(result) if result is not None else 0
 
     async def not_activated(self, filter_expr: str = "") -> int:
         """Return the number of participants not yet activated."""
         result = await self._client.get_json(
             self._event_id, "file/notactivated", {"filter": filter_expr}
         )
-        return int(result)
+        return int(result) if result is not None else 0
 
     async def ses_version(self) -> Version:
         """Return the Sports Event Server version."""
@@ -50,7 +50,7 @@ class FileEndpoint:
     async def mod_job_id(self) -> int:
         """Return the current modification job ID of the event file."""
         result = await self._client.get_json(self._event_id, "file/modjobid")
-        return int(result)
+        return int(result) if result is not None else 0
 
     async def mod_job_ids(self) -> tuple[int, int]:
         """Return both the data and settings modification job IDs."""
@@ -68,7 +68,7 @@ class FileEndpoint:
     async def owner(self) -> int:
         """Return the user ID of the event owner (online server only)."""
         result = await self._client.get_json(self._event_id, "file/owner")
-        return int(result)
+        return int(result) if result is not None else 0
 
     async def is_owner(self) -> bool:
         """Return True if the current user owns the event (online server only)."""

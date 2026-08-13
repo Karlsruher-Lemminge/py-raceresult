@@ -204,6 +204,11 @@ class Ranking(BaseModel):
 
     model_config = {"populate_by_name": True}
 
+    @field_validator("group", "sort", "sort_desc", mode="before")
+    @classmethod
+    def _none_to_list(cls, v: object) -> object:
+        return v if v is not None else []
+
 
 class Result(BaseModel):
     """Result definition.

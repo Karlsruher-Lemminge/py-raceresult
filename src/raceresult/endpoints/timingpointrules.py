@@ -61,7 +61,7 @@ class TimingPointRulesEndpoint:
         """
         params = {"id": id}
         result = await self._client.get_json(self._event_id, "timingpointrules/get", params)
-        return TimingPointRule.model_validate(result)
+        return TimingPointRule.model_validate(result if result else {})
 
     async def delete(self, id: int) -> None:
         """Delete a timing point rule.

@@ -7,9 +7,9 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
-from raceresult.models.types import RRDecimal
+from raceresult.models.types import RRDateTime, RRDecimal
 
 
 class TimingPoint(BaseModel):
@@ -77,8 +77,14 @@ class RawData(BaseModel):
     result: int = Field(default=0, alias="Result")
     time: RRDecimal = Field(default=Decimal(0), alias="Time")
     invalid: bool = Field(default=False, alias="Invalid")
+    passing: Passing = Field(default_factory=lambda: Passing(), alias="Passing")
 
     model_config = {"populate_by_name": True}
+
+    @field_validator("passing", mode="before")
+    @classmethod
+    def _none_to_passing(cls, v: object) -> object:
+        return v if v is not None else {}
 
 
 class RawDataReduced(BaseModel):
@@ -114,6 +120,20 @@ class Time(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class PassingPosition(BaseModel):
+    """GPS position attached to a passing.
+
+    Based on go-model/model.go:583-588.
+    """
+
+    latitude: float = Field(default=0.0, alias="Latitude")
+    longitude: float = Field(default=0.0, alias="Longitude")
+    altitude: float = Field(default=0.0, alias="Altitude")
+    flag: str = Field(default="", alias="Flag")
+
+    model_config = {"populate_by_name": True}
+
+
 class Passing(BaseModel):
     """Passing data from timing hardware.
 
@@ -121,6 +141,9 @@ class Passing(BaseModel):
     """
 
     transponder: str = Field(default="", alias="Transponder")
+    position: PassingPosition = Field(
+        default_factory=PassingPosition, alias="Position"
+    )
     hits: int = Field(default=0, alias="Hits")
     rssi: int = Field(default=0, alias="RSSI")
     battery: RRDecimal = Field(default=Decimal(0), alias="Battery")
@@ -138,8 +161,15 @@ class Passing(BaseModel):
     file_no: int = Field(default=0, alias="FileNo")
     passing_no: int = Field(default=0, alias="PassingNo")
     customer: int = Field(default=0, alias="Customer")
+    received: RRDateTime = Field(default=None, alias="Received")
+    utc_time: RRDateTime = Field(default=None, alias="UTCTime")
 
     model_config = {"populate_by_name": True}
+
+    @field_validator("position", mode="before")
+    @classmethod
+    def _none_to_position(cls, v: object) -> object:
+        return v if v is not None else {}
 
 
 class PassingToProcess(BaseModel):

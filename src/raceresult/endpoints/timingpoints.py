@@ -61,7 +61,7 @@ class TimingPointsEndpoint:
         """
         params = {"name": name}
         result = await self._client.get_json(self._event_id, "timingpoints/get", params)
-        return TimingPoint.model_validate(result)
+        return TimingPoint.model_validate(result if result else {})
 
     async def delete(self, name: str) -> None:
         """Delete a timing point.

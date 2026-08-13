@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from enum import IntEnum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class TemplateType(IntEnum):
@@ -102,6 +102,11 @@ class EmailTemplate(BaseModel):
 
     model_config = {"populate_by_name": True}
 
+    @field_validator("attachments", "http_headers", mode="before")
+    @classmethod
+    def _none_to_list(cls, v: object) -> object:
+        return v if v is not None else []
+
 
 class PreviewAttachment(BaseModel):
     """Preview attachment info.
@@ -144,3 +149,10 @@ class Preview(BaseModel):
     errors: list[str] = Field(default_factory=list, alias="Errors")
 
     model_config = {"populate_by_name": True}
+
+    @field_validator(
+        "bibs", "pids", "attachments", "http_headers", "errors", mode="before"
+    )
+    @classmethod
+    def _none_to_list(cls, v: object) -> object:
+        return v if v is not None else []
