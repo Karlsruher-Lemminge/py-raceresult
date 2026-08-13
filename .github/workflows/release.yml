@@ -65,14 +65,33 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v7
+
       - uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist
 
+      # Auto-generated notes only list merged PRs, which misses everything
+      # landed directly on main. Lead with the CHANGELOG section instead.
+      - name: Extract release notes from CHANGELOG
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          awk -v ver="${TAG#v}" '
+            $0 ~ "^## \\[" ver "\\]" { f = 1; next }
+            f && (/^## \[/ || /^\[[A-Za-z]/) { exit }
+            f
+          ' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            echo "::warning::no CHANGELOG section for $TAG; falling back to generated notes"
+          fi
+          cat notes.md
+
       - uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          body_path: notes.md
+          append_body: true
           generate_release_notes: true
           files: dist/*
 
